@@ -1,6 +1,8 @@
 /* eslint-disable no-console */
 import * as esbuild from 'esbuild';
 
+import process from 'node:process';
+
 // Config output
 const BUILD_DIRECTORY = 'dist';
 const PRODUCTION = process.env.NODE_ENV === 'production';
@@ -44,7 +46,7 @@ else {
       // Log all served files for easy reference
       const origin = `http://localhost:${port}`;
       const files = ENTRY_POINTS.map(
-        (path) => `${origin}/${path.replace('src/', '').replace('.ts', '.js')}`
+        (path) => `${origin}/${path.replace('src/', '').replace('.ts', '.js')}`,
       );
 
       console.log('Serving at:', origin);
