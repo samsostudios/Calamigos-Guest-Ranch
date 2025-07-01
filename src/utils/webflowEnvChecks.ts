@@ -1,10 +1,10 @@
 type WebflowEnv = 'design' | 'preview' | 'editor' | 'published';
 
 export function getWebflowEnv(): WebflowEnv {
-  const wf = (window as any).Webflow;
+  const wf = window.Webflow as { env?: (mode?: string) => boolean };
   const isEditor =
     document.documentElement.hasAttribute('w-editor') ||
-    typeof (window as any).WebflowEditor !== 'undefined' ||
+    typeof window.WebflowEditor !== 'undefined' ||
     wf?.env?.('editor') === true;
 
   const isPreview = wf?.env?.('preview') === true;
@@ -14,12 +14,12 @@ export function getWebflowEnv(): WebflowEnv {
   return isEditor ? 'editor' : isPreview ? 'preview' : 'published';
 }
 
-function displayMode(env: string) {
-  if (env === 'preview') {
-    console.log('👀 Designer Preview mode!');
-  } else if (env === 'editor') {
-    console.log('🛠 Editor Mode');
-  } else {
-    console.log('🌍 Production site');
-  }
-}
+// function displayMode(env: string) {
+//   if (env === 'preview') {
+//     console.log('👀 Designer Preview mode!');
+//   } else if (env === 'editor') {
+//     console.log('🛠 Editor Mode');
+//   } else {
+//     console.log('🌍 Production site');
+//   }
+// }

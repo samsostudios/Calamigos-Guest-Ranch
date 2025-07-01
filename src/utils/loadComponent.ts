@@ -1,6 +1,6 @@
 export const loadComponent = (
   selector: string,
-  importModule: () => Promise<{ default: () => void }>
+  importModule: () => Promise<{ default: () => void }>,
 ) => {
   const element = document.querySelector(selector);
   if (element) {

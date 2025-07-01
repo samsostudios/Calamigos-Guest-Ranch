@@ -1,7 +1,9 @@
+import Lenis from '@studio-freight/lenis';
 import gsap from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
-import Lenis from '@studio-freight/lenis';
+
 import { getWebflowEnv } from './webflowEnvChecks';
+
 gsap.registerPlugin(ScrollTrigger);
 
 let lenis: Lenis | null = null;
