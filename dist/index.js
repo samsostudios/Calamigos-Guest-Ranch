@@ -4307,19 +4307,27 @@
       init_gsap();
       Menu = class {
         component;
+        menuMain;
         menuOpenIcon;
         menuCloseIcon;
         menuLinks;
         bgMain;
         bgGlass;
+        bgTexture;
+        menuInfo;
+        menuOverflow;
         menuWidth;
         constructor() {
           this.component = document.querySelector(".component_menu");
           this.menuOpenIcon = document.querySelector("#menuOpen");
           this.menuCloseIcon = document.querySelector("#menuClose");
+          this.menuMain = this.component.querySelector(".menu_wrap");
           this.bgMain = this.component.querySelector(".menu-bg_main");
           this.bgGlass = this.component.querySelector(".menu-bg_glass");
+          this.bgTexture = this.component.querySelector(".menu_texture");
           this.menuLinks = [...document.querySelectorAll(".menu_link")];
+          this.menuInfo = this.component.querySelector(".menu_info");
+          this.menuOverflow = this.component.querySelector(".menu_overflow");
           this.menuWidth = this.component.clientWidth;
           console.log("MENU", this.menuOpenIcon, this.menuCloseIcon, this.menuLinks, this.menuWidth);
           this.setup();
@@ -4336,21 +4344,61 @@
           this.menuCloseIcon.addEventListener("click", () => {
             this.closeMenu();
           });
+          this.menuOverflow.addEventListener("click", () => {
+            this.closeMenu();
+          });
         }
         openMenu() {
           console.log("OPEN");
           const tl = gsapWithCSS.timeline();
-          tl.set(this.component, { display: "block" });
-          tl.to(this.bgGlass, { duration: 0.8, width: this.menuWidth, ease: "sine.out" });
+          tl.set(this.component, { display: "flex", opacity: 0 });
+          tl.to(this.component, { duration: 0.5, opacity: 1, ease: "powe2.out" });
+          tl.to(this.bgGlass, { duration: 0.8, width: this.menuWidth, ease: "power4.inOut" }, "<");
+          tl.to(this.bgMain, { duration: 0.8, width: this.menuWidth - 16, ease: "power1.inOut" }, "<");
+          tl.to(this.menuCloseIcon, { duration: 0.8, opacity: 1, ease: "power2.out" }, "<");
+          tl.fromTo(
+            this.bgTexture,
+            { opacity: 0 },
+            { duration: 0.8, opacity: 0.05, ease: "sine.out" },
+            "<0.1"
+          );
+          tl.fromTo(
+            this.menuLinks,
+            { opacity: 0, y: "2rem" },
+            { duration: 0.5, opacity: 1, y: "0rem", ease: "sine.out", stagger: 0.1 }
+          );
+          tl.fromTo(
+            this.menuInfo.children,
+            { opacity: 0, y: "2rem" },
+            { duration: 0.5, opacity: 1, y: "0rem", ease: "sine.out", stagger: 0.1 },
+            "<0.5"
+          );
         }
         closeMenu() {
           console.log("CLOSE");
           const tl = gsapWithCSS.timeline();
+          tl.to(this.menuLinks, {
+            duration: 0.5,
+            opacity: 0,
+            y: "-2rem",
+            ease: "sine.out",
+            stagger: 0.1
+          });
+          tl.to(
+            this.menuInfo.children,
+            { duration: 0.5, opacity: 0, y: "-2rem", ease: "sine.out", stagger: 0.1 },
+            "<0.5"
+          );
+          tl.to(this.menuCloseIcon, { duration: 0.8, opacity: 0, ease: "power1.inOut" }, "<");
+          tl.to(this.bgTexture, { duration: 0.8, opacity: 0, ease: "power1.inOut" }, "<0.1");
+          tl.to(this.bgGlass, { duration: 0.8, width: 0, ease: "power4.inOut" });
+          tl.to(this.bgMain, { duration: 0.8, width: 0, ease: "power1.inOut" }, "<");
+          tl.to(this.component, { duration: 0.8, opacity: 0, ease: "powe3.out" });
           tl.set(this.component, { display: "none" });
         }
         measureMenu() {
           gsapWithCSS.set(this.component, { x: "-100%", display: "block" });
-          this.menuWidth = this.component.getBoundingClientRect().width;
+          this.menuWidth = this.menuMain.getBoundingClientRect().width;
           gsapWithCSS.set(this.component, { x: "0%", display: "none" });
           console.log("here", this.menuWidth);
         }
