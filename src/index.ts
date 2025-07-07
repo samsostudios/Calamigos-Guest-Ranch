@@ -11,7 +11,7 @@ window.Webflow.push(() => {
 
   initSmoothScroll();
 
-  console.log(document.querySelector('.component_menu')); // Should not be null
-
+  loadComponent('.component_preloader', () => import('$components/preloader'));
   loadComponent('.component_menu', () => import('$components/menu'));
+  loadComponent('.component_slider-full', () => import('$components/sliderFade'));
 });
