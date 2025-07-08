@@ -14,4 +14,5 @@ window.Webflow.push(() => {
   loadComponent('.component_preloader', () => import('$components/preloader'));
   loadComponent('.component_menu', () => import('$components/menu'));
   loadComponent('.component_slider-full', () => import('$components/sliderFade'));
+  loadComponent('.component_slider-bento', () => import('$components/sliderGallery'));
 });
