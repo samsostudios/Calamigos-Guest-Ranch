@@ -28,6 +28,7 @@ class Preloader {
 
     console.log('bp', this.bp, this.paths);
 
+    gsap.set(this.component, { display: 'block' });
     gsap.set(this.paths, { stroke: 'currentColor', strokeWidth: 1, fill: 'none' });
 
     this.animate();
