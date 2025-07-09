@@ -7233,6 +7233,55 @@
     }
   });
 
+  // src/components/heroParallax.ts
+  var heroParallax_exports = {};
+  __export(heroParallax_exports, {
+    default: () => heroParallax_default,
+    heroParallax: () => heroParallax
+  });
+  var HeroParallax, heroParallax, heroParallax_default;
+  var init_heroParallax = __esm({
+    "src/components/heroParallax.ts"() {
+      "use strict";
+      init_live_reload();
+      init_gsap();
+      init_ScrollTrigger();
+      gsapWithCSS.registerPlugin(ScrollTrigger2);
+      HeroParallax = class {
+        component;
+        heroBg;
+        heroContent;
+        heroSpacer;
+        constructor() {
+          this.component = document.querySelector(".section_hero");
+          this.heroBg = this.component.querySelector("img");
+          this.heroContent = this.component.querySelector(".hero_layout");
+          this.heroSpacer = document.querySelector(".hero_spacer");
+          const heroOffset = this.heroSpacer.clientHeight;
+          this.setScroller(heroOffset);
+        }
+        setScroller(offset) {
+          gsapWithCSS.set(this.heroBg, { scale: 1.2 });
+          const st = gsapWithCSS.timeline({
+            scrollTrigger: {
+              trigger: this.component,
+              start: `top top`,
+              end: `bottom+=${offset} top`,
+              scrub: 1,
+              markers: true
+            }
+          });
+          st.to(this.heroBg, { scale: 1, ease: "linear" });
+          st.to(this.heroContent, { y: "-50%", filter: "blur(15px)", ease: "linear" }, "<");
+        }
+      };
+      heroParallax = () => {
+        new HeroParallax();
+      };
+      heroParallax_default = heroParallax;
+    }
+  });
+
   // src/components/sliderFade.ts
   var sliderFade_exports = {};
   __export(sliderFade_exports, {
@@ -7251,18 +7300,26 @@
         component;
         sliderMask;
         sliderImages;
+        sliderIndicators;
+        sliderDuration;
         currentIndex = 0;
+        progressTL = null;
         constructor() {
           this.component = document.querySelector(".component_slider-full");
           this.sliderMask = this.component.querySelector(".slider-full_mask");
           this.sliderImages = [
             ...this.component.querySelectorAll(".slider-full_img")
           ];
+          this.sliderIndicators = [
+            ...this.component.querySelectorAll(".slider-full_pill.is-fill")
+          ];
+          this.sliderDuration = Number(this.component.dataset.sliderSpeed);
+          if (Number.isNaN(this.sliderDuration)) this.sliderDuration = 8;
           this.setup();
+          this.scroller();
           this.startSlider();
         }
         setup() {
-          console.log("setup", this.sliderImages);
           gsapWithCSS.set(this.sliderMask, { width: "100%", height: "80svh" });
           gsapWithCSS.set(this.sliderImages, {
             position: "absolute",
@@ -7270,7 +7327,6 @@
             height: "100%",
             scale: 1.2
           });
-          this.scroller();
         }
         scroller() {
           const st = gsapWithCSS.timeline({
@@ -7278,25 +7334,46 @@
               trigger: this.component,
               start: "top 20%",
               end: "bottom 20%",
-              scrub: true,
-              markers: true
+              scrub: true
+              // markers: true,
             }
           });
           st.to(this.sliderImages, { scale: 1, ease: "linear" });
         }
         startSlider() {
           if (this.sliderImages.length <= 1) return;
-          const duration = 8;
           this.sliderImages.forEach((img, index) => {
             gsapWithCSS.set(img, { autoAlpha: index === this.currentIndex ? 1 : 0 });
           });
-          setInterval(() => {
-            const previous = this.sliderImages[this.currentIndex];
-            this.currentIndex = (this.currentIndex + 1) % this.sliderImages.length;
-            const next = this.sliderImages[this.currentIndex];
-            gsapWithCSS.to(previous, { autoAlpha: 0, duration: 1, ease: "power2.inOut" });
-            gsapWithCSS.to(next, { autoAlpha: 1, duration: 1, ease: "power2.inOut" });
-          }, duration * 1e3);
+          if (this.sliderIndicators.length !== 0) this.animateProgess(this.currentIndex);
+          setInterval(() => this.advanceSlider(), this.sliderDuration * 1e3);
+        }
+        advanceSlider() {
+          const previous = this.currentIndex;
+          const next = (this.currentIndex + 1) % this.sliderImages.length;
+          this.currentIndex = next;
+          gsapWithCSS.to(this.sliderImages[previous], { autoAlpha: 0, duration: 1, ease: "power2.inOut" });
+          gsapWithCSS.to(this.sliderImages[next], { autoAlpha: 1, duration: 1, ease: "power2.inOut" });
+          if (this.sliderIndicators.length !== 0) this.animateProgess(this.currentIndex);
+        }
+        animateProgess(index) {
+          if (this.sliderIndicators.length === 0) return;
+          this.progressTL?.kill();
+          this.sliderIndicators.forEach((item, i) => {
+            if (i !== index) gsapWithCSS.set(item, { x: "-100%" });
+          });
+          const bar = this.sliderIndicators[index];
+          this.progressTL = gsapWithCSS.timeline();
+          this.progressTL.fromTo(
+            bar,
+            { x: "-100%" },
+            { duration: this.sliderDuration - 0.2, x: "0%", ease: "linear" }
+          );
+          this.progressTL.to(bar, {
+            x: "100%",
+            duration: 0.2,
+            ease: "power1.out"
+          });
         }
       };
       sliderFade = () => {
@@ -7721,6 +7798,7 @@
     initSmoothScroll();
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));
+    loadComponent_default("[data-hero-parallax]", () => Promise.resolve().then(() => (init_heroParallax(), heroParallax_exports)));
     loadComponent_default(".component_slider-full", () => Promise.resolve().then(() => (init_sliderFade(), sliderFade_exports)));
     loadComponent_default(".component_slider-bento", () => Promise.resolve().then(() => (init_bentoSlider(), bentoSlider_exports)));
   });
