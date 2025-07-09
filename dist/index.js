@@ -7576,6 +7576,73 @@
     }
   });
 
+  // src/components/formPopup.ts
+  var formPopup_exports = {};
+  __export(formPopup_exports, {
+    default: () => formPopup_default,
+    formPopup: () => formPopup
+  });
+  var FormPopup, formPopup, formPopup_default;
+  var init_formPopup = __esm({
+    "src/components/formPopup.ts"() {
+      "use strict";
+      init_live_reload();
+      init_gsap();
+      FormPopup = class {
+        component;
+        openButton;
+        closeButton;
+        compoentForm;
+        componentGlass;
+        constructor() {
+          this.component = document.querySelector(".component_pop-form");
+          this.openButton = document.querySelector("[data-popup-open]");
+          this.closeButton = document.querySelector("[data-popup-close]");
+          this.compoentForm = this.component.querySelector(".pop-form_main");
+          this.componentGlass = this.component.querySelector(".component_glass");
+          this.setListeners();
+        }
+        setListeners() {
+          if (this.openButton === null) return;
+          this.openButton.addEventListener("click", () => {
+            this.openModal();
+          });
+          this.closeButton.addEventListener("click", () => {
+            this.closeModal();
+          });
+          this.componentGlass.addEventListener("click", () => {
+            this.closeModal();
+          });
+        }
+        openModal() {
+          const tl = gsapWithCSS.timeline();
+          gsapWithCSS.set(this.component, { display: "block" });
+          tl.fromTo(
+            this.componentGlass,
+            { opacity: 0 },
+            { duration: 1.5, opacity: 1, ease: "power4.out" }
+          );
+          tl.fromTo(
+            this.compoentForm,
+            { y: "3rem", opacity: 0 },
+            { duration: 1.5, y: "0rem", opacity: 1, ease: "power4.out" },
+            "<0.5"
+          );
+        }
+        closeModal() {
+          const tl = gsapWithCSS.timeline();
+          tl.to(this.compoentForm, { duration: 1, y: "-3rem", opacity: 0, ease: "power4.out" });
+          tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: "power4.out" }, "<0.5");
+          gsapWithCSS.set(this.component, { display: "none" });
+        }
+      };
+      formPopup = () => {
+        new FormPopup();
+      };
+      formPopup_default = formPopup;
+    }
+  });
+
   // src/index.ts
   init_live_reload();
 
@@ -7904,6 +7971,7 @@
     loadComponent_default("[data-hero-parallax]", () => Promise.resolve().then(() => (init_heroParallax(), heroParallax_exports)));
     loadComponent_default(".component_slider-full", () => Promise.resolve().then(() => (init_sliderFade(), sliderFade_exports)));
     loadComponent_default(".component_slider-bento", () => Promise.resolve().then(() => (init_bentoSlider(), bentoSlider_exports)));
+    loadComponent_default(".component_pop-form", () => Promise.resolve().then(() => (init_formPopup(), formPopup_exports)));
   });
 })();
 /*! Bundled license information:

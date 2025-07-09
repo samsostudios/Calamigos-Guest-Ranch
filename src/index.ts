@@ -17,4 +17,5 @@ window.Webflow.push(() => {
   loadComponent('[data-hero-parallax]', () => import('$components/heroParallax'));
   loadComponent('.component_slider-full', () => import('$components/sliderFade'));
   loadComponent('.component_slider-bento', () => import('$components/bentoSlider'));
+  loadComponent('.component_pop-form', () => import('$components/formPopup'));
 });
