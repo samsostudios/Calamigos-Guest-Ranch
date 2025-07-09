@@ -7317,33 +7317,78 @@
     "src/components/bentoSlider.ts"() {
       "use strict";
       init_live_reload();
+      init_gsap();
       BentoSlider = class {
         component;
-        bentoMain;
-        bentoPlaceholders;
-        imagePreviews;
+        main;
+        mainImages;
+        preview;
+        previewImages;
+        nextButton;
+        prevButton;
         currentIndex = 0;
         constructor() {
           this.component = document.querySelector(".component_slider-bento");
-          this.bentoMain = document.querySelector(".slider-bento_main-img");
-          this.bentoPlaceholders = [...this.bentoMain.children];
-          this.imagePreviews = [
-            ...this.component.querySelectorAll(".slider-bento_item")
-          ];
+          this.main = this.component.querySelector(".slider-bento_main");
+          this.mainImages = [...this.main.querySelectorAll("img")];
+          this.preview = this.component.querySelector(".slider-bento_preview");
+          this.previewImages = [...this.preview.querySelectorAll("img")];
+          this.nextButton = document.querySelector("#bentoNext");
+          this.prevButton = document.querySelector("#bentoPrev");
           this.setup();
+          this.setListeners();
         }
         setup() {
-          this.imagePreviews.forEach((img, i) => {
-            console.log(img, i);
-            const setImg = img.children[0];
-            if (setImg) {
-              const setSrc = setImg.src;
+          this.mainImages.forEach((img, i) => {
+            if (i !== this.currentIndex) img.style.display = "none";
+          });
+          this.previewImages.forEach((img, i) => {
+            if (i !== this.currentIndex) {
+              const imgParent = img.parentElement;
+              imgParent.classList.remove("is-active");
             }
           });
         }
         setListeners() {
+          this.nextButton.addEventListener("click", () => {
+            const nextIndex = (this.currentIndex + 1) % this.mainImages.length;
+            this.handleSwap(nextIndex, "next");
+          });
+          this.prevButton.addEventListener("click", () => {
+            const prevIndex = (this.currentIndex - 1 + this.mainImages.length) % this.mainImages.length;
+            this.handleSwap(prevIndex, "prev");
+          });
+          this.previewImages.forEach((img, i) => {
+            img.addEventListener("click", () => {
+              if (i !== this.currentIndex) {
+                const total = this.mainImages.length;
+                const diff = (i - this.currentIndex + total) % total;
+                const direction = diff === 0 ? "jump" : diff <= total / 2 ? "next" : "prev";
+                this.handleSwap(i, direction);
+              }
+            });
+          });
         }
-        handleSwap() {
+        handleSwap(targetIndex, direction) {
+          if (targetIndex === this.currentIndex) return;
+          const currentImg = this.mainImages[this.currentIndex];
+          const nextImg = this.mainImages[targetIndex];
+          const currentPreview = this.previewImages[this.currentIndex];
+          const currentPreviewParent = currentPreview.parentElement;
+          const nextPreview = this.previewImages[targetIndex];
+          const nextPreviewParent = nextPreview.parentElement;
+          const tl = gsapWithCSS.timeline();
+          const outY = direction === "prev" ? "100%" : "-100%";
+          const inY = direction === "prev" ? "-100%" : "100%";
+          tl.set(currentImg, { zIndex: 1 });
+          tl.set(nextImg, { zIndex: 0, display: "block", y: inY });
+          tl.to(currentImg, { duration: 1.5, y: outY, ease: "power3.inOut" });
+          tl.to(nextImg, { duration: 1.5, y: "0%", ease: "power3.inOut" }, "<");
+          tl.set(currentImg, { display: "none", y: "0%", zIndex: 0 });
+          tl.set(nextImg, { zIndex: 1 });
+          currentPreviewParent.classList.remove("is-active");
+          nextPreviewParent.classList.add("is-active");
+          this.currentIndex = targetIndex;
         }
       };
       bentoSlider = () => {
@@ -7673,9 +7718,6 @@
   window.Webflow ||= [];
   window.Webflow.push(() => {
     console.log("\u{1F30F} Calamigos Guest Ranch \u{1F343}");
-    document.addEventListener("click", (e2) => {
-      console.log("clicked", e2.target);
-    });
     initSmoothScroll();
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));
