@@ -27,7 +27,7 @@ class Menu {
 
     this.menuWidth = this.component.clientWidth;
 
-    console.log('MENU', this.menuOpenIcon, this.menuCloseIcon, this.menuLinks, this.menuWidth);
+    // console.log('MENU', this.menuOpenIcon, this.menuCloseIcon, this.menuLinks, this.menuWidth);
 
     this.setup();
     this.addListeners();
@@ -51,7 +51,6 @@ class Menu {
   }
 
   private openMenu() {
-    console.log('OPEN');
     const tl = gsap.timeline();
 
     tl.set(this.component, { display: 'flex', opacity: 0 });
@@ -80,8 +79,6 @@ class Menu {
   }
 
   private closeMenu() {
-    console.log('CLOSE');
-
     const tl = gsap.timeline();
 
     tl.to(this.menuLinks, {
@@ -108,8 +105,6 @@ class Menu {
     gsap.set(this.component, { x: '-100%', display: 'block' });
     this.menuWidth = this.menuMain.getBoundingClientRect().width;
     gsap.set(this.component, { x: '0%', display: 'none' });
-
-    console.log('here', this.menuWidth);
   }
 }
 

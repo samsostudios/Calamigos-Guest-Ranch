@@ -26,7 +26,7 @@ class Preloader {
 
     this.bp = breakpoints()[0] as string;
 
-    console.log('bp', this.bp, this.paths);
+    // console.log('bp', this.bp, this.paths);
 
     gsap.set(this.component, { display: 'block' });
     gsap.set(this.paths, { stroke: 'currentColor', strokeWidth: 1, fill: 'none' });

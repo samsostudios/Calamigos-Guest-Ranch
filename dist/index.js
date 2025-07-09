@@ -7054,7 +7054,6 @@
           this.logo = this.component.querySelector("#preloadLogoMain");
           this.paths = [...this.logo.querySelectorAll("path")];
           this.bp = breakpoints()[0];
-          console.log("bp", this.bp, this.paths);
           gsapWithCSS.set(this.component, { display: "block" });
           gsapWithCSS.set(this.paths, { stroke: "currentColor", strokeWidth: 1, fill: "none" });
           this.animate();
@@ -7152,7 +7151,6 @@
           this.menuInfo = this.component.querySelector(".menu_info");
           this.menuOverflow = this.component.querySelector(".menu_overflow");
           this.menuWidth = this.component.clientWidth;
-          console.log("MENU", this.menuOpenIcon, this.menuCloseIcon, this.menuLinks, this.menuWidth);
           this.setup();
           this.addListeners();
         }
@@ -7172,7 +7170,6 @@
           });
         }
         openMenu() {
-          console.log("OPEN");
           const tl = gsapWithCSS.timeline();
           tl.set(this.component, { display: "flex", opacity: 0 });
           tl.to(this.component, { duration: 0.5, opacity: 1, ease: "powe2.out" });
@@ -7198,7 +7195,6 @@
           );
         }
         closeMenu() {
-          console.log("CLOSE");
           const tl = gsapWithCSS.timeline();
           tl.to(this.menuLinks, {
             duration: 0.5,
@@ -7223,13 +7219,118 @@
           gsapWithCSS.set(this.component, { x: "-100%", display: "block" });
           this.menuWidth = this.menuMain.getBoundingClientRect().width;
           gsapWithCSS.set(this.component, { x: "0%", display: "none" });
-          console.log("here", this.menuWidth);
         }
       };
       menu = () => {
         new Menu();
       };
       menu_default = menu;
+    }
+  });
+
+  // src/components/pageTransition.ts
+  var pageTransition_exports = {};
+  __export(pageTransition_exports, {
+    default: () => pageTransition_default,
+    pageTransition: () => pageTransition
+  });
+  var PageTransition, pageTransition, pageTransition_default;
+  var init_pageTransition = __esm({
+    "src/components/pageTransition.ts"() {
+      "use strict";
+      init_live_reload();
+      init_gsap();
+      PageTransition = class {
+        component;
+        links;
+        filteredLinks;
+        transitionPane;
+        transitionFilter;
+        constructor() {
+          this.component = document.querySelector(".component_transition");
+          this.links = [...document.querySelectorAll("a")].map((item) => item);
+          this.filteredLinks = this.filterLinks();
+          this.transitionPane = this.component.querySelector(".transition_container");
+          this.transitionFilter = document.querySelector(".transition_filter");
+          this.checkPage();
+          this.setListeners();
+        }
+        checkPage() {
+          const windowLocation = window.location.pathname;
+          if (windowLocation === "/") {
+            gsapWithCSS.to(this.component, { display: "none" });
+          }
+          this.animateOut();
+        }
+        setListeners() {
+          this.filteredLinks.forEach((item) => {
+            item.addEventListener("click", (e2) => {
+              e2.preventDefault();
+              const destination = item.href;
+              this.animateIn(destination);
+            });
+          });
+          window.onpageshow = function(event) {
+            if (event.persisted) {
+              window.location.reload();
+            }
+          };
+        }
+        animateIn(link) {
+          const tl = gsapWithCSS.timeline({
+            onComplete: () => {
+              window.location.href = link;
+            }
+          });
+          tl.set(this.component, { display: "block" });
+          tl.set(this.transitionFilter, { display: "block" });
+          tl.fromTo(
+            this.transitionPane,
+            { y: "100%", scale: 0.6, borderRadius: "3rem" },
+            { duration: 1.5, y: "0%", scale: 1, borderRadius: 0, ease: "power4.out" }
+          );
+          tl.fromTo(
+            this.transitionFilter,
+            { opacity: 0 },
+            { duration: 1.5, opacity: 1, ease: "power4.out" },
+            "<"
+          );
+        }
+        animateOut() {
+          const tl = gsapWithCSS.timeline({
+            onComplete: () => {
+              gsapWithCSS.set("html", { height: "auto" });
+              gsapWithCSS.set("body", { overflow: "auto" });
+            }
+          });
+          tl.to(this.transitionPane, {
+            duration: 2,
+            y: "-100%",
+            scale: 0.8,
+            borderRadius: "3rem",
+            ease: "power4.out"
+          });
+          tl.to(this.transitionFilter, { duration: 2, opacity: 0, ease: "power4.out" }, "<");
+          tl.set(this.component, { display: "none" });
+          tl.set(this.transitionFilter, { display: "none" });
+        }
+        filterLinks() {
+          const returnFilter = this.links.filter((link) => {
+            const temp = new URL(link.href, window.location.origin);
+            const classList = link.className;
+            const isInternal = temp.hostname === window.location.host;
+            const isNotAnchor = !temp.href.includes("#");
+            const isNotExternal = link.target !== "_blank";
+            const isExcluded = /(w-commerce|cart_)/.test(classList);
+            return isInternal && isNotAnchor && isNotExternal && !isExcluded;
+          });
+          return returnFilter;
+        }
+      };
+      pageTransition = () => {
+        new PageTransition();
+      };
+      pageTransition_default = pageTransition;
     }
   });
 
@@ -7795,9 +7896,11 @@
   window.Webflow ||= [];
   window.Webflow.push(() => {
     console.log("\u{1F30F} Calamigos Guest Ranch \u{1F343}");
+    console.log("!!!", document.querySelector(".component_transition"));
     initSmoothScroll();
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));
+    loadComponent_default(".component_transition", () => Promise.resolve().then(() => (init_pageTransition(), pageTransition_exports)));
     loadComponent_default("[data-hero-parallax]", () => Promise.resolve().then(() => (init_heroParallax(), heroParallax_exports)));
     loadComponent_default(".component_slider-full", () => Promise.resolve().then(() => (init_sliderFade(), sliderFade_exports)));
     loadComponent_default(".component_slider-bento", () => Promise.resolve().then(() => (init_bentoSlider(), bentoSlider_exports)));
