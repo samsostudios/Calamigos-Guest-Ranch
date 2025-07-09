@@ -10,6 +10,7 @@ class Preloader {
   private loaderHighlights: HTMLElement[];
   private LoaderTracks: HTMLElement[];
   private logo: SVGAElement;
+  private heroVideo: HTMLVideoElement;
   private paths: SVGPathElement[];
   private bp: string;
 
@@ -22,12 +23,14 @@ class Preloader {
       ...this.component.querySelectorAll('.component_span.is-track'),
     ] as HTMLElement[];
     this.logo = this.component.querySelector('#preloadLogoMain') as SVGAElement;
+    this.heroVideo = document.querySelector('#homeHeroVideo') as HTMLVideoElement;
     this.paths = [...this.logo.querySelectorAll('path')] as SVGPathElement[];
 
     this.bp = breakpoints()[0] as string;
 
     // console.log('bp', this.bp, this.paths);
 
+    if (this.heroVideo) this.heroVideo.pause();
     gsap.set(this.component, { display: 'block' });
     gsap.set(this.paths, { stroke: 'currentColor', strokeWidth: 1, fill: 'none' });
 
@@ -69,11 +72,7 @@ class Preloader {
     const hero = document.querySelector('.section_hero') as HTMLElement;
     const heroHeader = hero.querySelector('.hero_header');
     const nav = document.querySelector('.component_nav');
-    const tl = gsap.timeline({
-      onComplete: () => {
-        // homeHeroReveal();
-      },
-    });
+    const tl = gsap.timeline({});
 
     tl.to(this.loaderHighlights[0], { x: '100%', ease: 'power3.in' });
     tl.to(this.logo, { opacity: 0, ease: 'power4.out' }, '<');
@@ -86,6 +85,19 @@ class Preloader {
       '<',
     );
     tl.from(nav, { duration: 1, filter: 'blur(100px)', opacity: 0, ease: 'power3.out' }, '<');
+
+    const tlDur = tl.duration();
+
+    if (this.heroVideo) {
+      setTimeout(
+        () => {
+          this.heroVideo.play().catch((err) => {
+            console.warn(`Failed to play video (${this.heroVideo}):`, err);
+          });
+        },
+        tlDur * 0.35 * 1000,
+      );
+    }
   }
 }
 
