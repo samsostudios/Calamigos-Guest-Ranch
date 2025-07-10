@@ -22,7 +22,6 @@ class PageTransition {
     const windowLocation = window.location.pathname;
 
     if (windowLocation === '/') {
-      console.log('CHECK');
       gsap.to(this.component, { display: 'none' });
     }
 
