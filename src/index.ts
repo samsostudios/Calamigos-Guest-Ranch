@@ -5,6 +5,9 @@ window.Webflow ||= [];
 window.Webflow.push(() => {
   console.log('🌏 Calamigos Guest Ranch 🍃');
 
+  // const bp = breakpoints();
+  // console.log('[INFO]', bp);
+
   // document.addEventListener('click', (e) => {
   //   console.log('clicked', e.target);
   // });

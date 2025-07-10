@@ -1,5 +1,7 @@
 import gsap from 'gsap';
 
+import { startSmoothScroll, stopSmoothScroll } from '$utils/smoothScroll';
+
 class FormPopup {
   private component: HTMLElement;
   private toggleButtons: HTMLButtonElement[];
@@ -36,6 +38,8 @@ class FormPopup {
   }
 
   private openModal() {
+    stopSmoothScroll();
+
     const tl = gsap.timeline();
 
     gsap.set(this.component, { display: 'block' });
@@ -53,6 +57,8 @@ class FormPopup {
   }
 
   private closeModal() {
+    startSmoothScroll();
+
     const tl = gsap.timeline();
 
     tl.to(this.compoentForm, { duration: 1, y: '-3rem', opacity: 0, ease: 'power4.out' });

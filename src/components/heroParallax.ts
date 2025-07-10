@@ -29,7 +29,7 @@ class HeroParallax {
         start: `top top`,
         end: `bottom+=${offset} top`,
         scrub: 1,
-        markers: true,
+        // markers: true,
       },
     });
 

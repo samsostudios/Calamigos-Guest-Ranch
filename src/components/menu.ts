@@ -1,5 +1,7 @@
 import gsap from 'gsap';
 
+import { startSmoothScroll, stopSmoothScroll } from '$utils/smoothScroll';
+
 class Menu {
   private component: HTMLElement;
   private menuMain: HTMLElement;
@@ -51,9 +53,14 @@ class Menu {
   }
 
   private openMenu() {
-    const tl = gsap.timeline();
+    stopSmoothScroll();
 
-    tl.set(this.component, { display: 'flex', opacity: 0 });
+    const tl = gsap.timeline({
+      onComplete: () => {
+        console.log('complete');
+      },
+    });
+    tl.set(this.component, { display: 'flex' });
 
     tl.to(this.component, { duration: 0.5, opacity: 1, ease: 'powe2.out' });
     tl.to(this.bgGlass, { duration: 0.8, width: this.menuWidth, ease: 'power4.inOut' }, '<');
@@ -79,8 +86,9 @@ class Menu {
   }
 
   private closeMenu() {
-    const tl = gsap.timeline();
+    startSmoothScroll();
 
+    const tl = gsap.timeline();
     tl.to(this.menuLinks, {
       duration: 0.5,
       opacity: 0,
