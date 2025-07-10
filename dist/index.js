@@ -7602,12 +7602,14 @@
       init_gsap();
       FormPopup = class {
         component;
+        toggleButtons;
         openButton;
         closeButton;
         compoentForm;
         componentGlass;
         constructor() {
           this.component = document.querySelector(".component_pop-form");
+          this.toggleButtons = [...document.querySelectorAll("[data-popup]")];
           this.openButton = document.querySelector("[data-popup-open]");
           this.closeButton = document.querySelector("[data-popup-close]");
           this.compoentForm = this.component.querySelector(".pop-form_main");
@@ -7615,12 +7617,14 @@
           this.setListeners();
         }
         setListeners() {
-          if (this.openButton === null) return;
-          this.openButton.addEventListener("click", () => {
-            this.openModal();
-          });
-          this.closeButton.addEventListener("click", () => {
-            this.closeModal();
+          this.toggleButtons.forEach((button) => {
+            const action = button.getAttribute("data-popup");
+            if (!action) return;
+            if (action === "open") {
+              button.addEventListener("click", () => this.openModal());
+            } else if (action === "close") {
+              button.addEventListener("click", () => this.closeModal());
+            }
           });
           this.componentGlass.addEventListener("click", () => {
             this.closeModal();
@@ -7645,7 +7649,7 @@
           const tl = gsapWithCSS.timeline();
           tl.to(this.compoentForm, { duration: 1, y: "-3rem", opacity: 0, ease: "power4.out" });
           tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: "power4.out" }, "<0.5");
-          gsapWithCSS.set(this.component, { display: "none" });
+          tl.set(this.component, { display: "none" });
         }
       };
       formPopup = () => {
@@ -7946,7 +7950,7 @@
         return;
       }
       lenis = new Lenis({
-        duration: 1.4,
+        duration: 1.2,
         easing: (t2) => 1 - Math.pow(1 - t2, 3),
         // cubic ease-out
         wheelMultiplier: 1,
@@ -7975,7 +7979,6 @@
   window.Webflow ||= [];
   window.Webflow.push(() => {
     console.log("\u{1F30F} Calamigos Guest Ranch \u{1F343}");
-    console.log("!!!", document.querySelector(".component_transition"));
     initSmoothScroll();
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));

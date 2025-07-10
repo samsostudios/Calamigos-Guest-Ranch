@@ -8,7 +8,6 @@ window.Webflow.push(() => {
   // document.addEventListener('click', (e) => {
   //   console.log('clicked', e.target);
   // });
-  console.log('!!!', document.querySelector('.component_transition'));
   initSmoothScroll();
 
   loadComponent('.component_preloader', () => import('$components/preloader'));

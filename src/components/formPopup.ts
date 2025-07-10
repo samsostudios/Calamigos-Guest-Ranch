@@ -2,6 +2,7 @@ import gsap from 'gsap';
 
 class FormPopup {
   private component: HTMLElement;
+  private toggleButtons: HTMLButtonElement[];
   private openButton: HTMLButtonElement;
   private closeButton: HTMLButtonElement;
   private compoentForm: HTMLElement;
@@ -9,6 +10,7 @@ class FormPopup {
 
   constructor() {
     this.component = document.querySelector('.component_pop-form') as HTMLElement;
+    this.toggleButtons = [...document.querySelectorAll('[data-popup]')] as HTMLButtonElement[];
     this.openButton = document.querySelector('[data-popup-open]') as HTMLButtonElement;
     this.closeButton = document.querySelector('[data-popup-close]') as HTMLButtonElement;
     this.compoentForm = this.component.querySelector('.pop-form_main') as HTMLElement;
@@ -18,13 +20,15 @@ class FormPopup {
   }
 
   private setListeners() {
-    if (this.openButton === null) return;
+    this.toggleButtons.forEach((button) => {
+      const action = button.getAttribute('data-popup');
+      if (!action) return;
 
-    this.openButton.addEventListener('click', () => {
-      this.openModal();
-    });
-    this.closeButton.addEventListener('click', () => {
-      this.closeModal();
+      if (action === 'open') {
+        button.addEventListener('click', () => this.openModal());
+      } else if (action === 'close') {
+        button.addEventListener('click', () => this.closeModal());
+      }
     });
     this.componentGlass.addEventListener('click', () => {
       this.closeModal();
@@ -53,7 +57,7 @@ class FormPopup {
 
     tl.to(this.compoentForm, { duration: 1, y: '-3rem', opacity: 0, ease: 'power4.out' });
     tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: 'power4.out' }, '<0.5');
-    gsap.set(this.component, { display: 'none' });
+    tl.set(this.component, { display: 'none' });
   }
 }
 export const formPopup = () => {
