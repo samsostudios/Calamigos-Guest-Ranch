@@ -9,14 +9,14 @@ class ParallaxImages {
   constructor() {
     this.images = [...document.querySelectorAll('[data-parallax]')] as HTMLElement[];
 
-    console.log('para', this.images);
+    // console.log('para', this.images);
 
     this.setScroller();
   }
 
   private setScroller() {
     this.images.forEach((img, i) => {
-      console.log('here', img.parentElement);
+      // console.log('here', img.parentElement);
 
       let scale: number = Number(img.dataset.parallax);
       if (scale === 0) scale = 1.2;

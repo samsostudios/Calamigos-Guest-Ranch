@@ -1,5 +1,6 @@
 import parallaxImages from '$components/parallaxImages';
 import loadComponent from '$utils/loadComponent';
+import skipperFix from '$utils/skipperFix';
 import { initSmoothScroll } from '$utils/smoothScroll';
 
 window.Webflow ||= [];
@@ -13,6 +14,7 @@ window.Webflow.push(() => {
   //   console.log('clicked', e.target);
   // });
   initSmoothScroll();
+  skipperFix();
   parallaxImages();
 
   loadComponent('.component_preloader', () => import('$components/preloader'));
