@@ -34,7 +34,7 @@ class HeroParallax {
     });
 
     st.to(this.heroBg, { scale: 1, ease: 'linear' });
-    st.to(this.heroContent, { y: '-50%', filter: 'blur(15px)', ease: 'linear' }, '<');
+    st.to(this.heroContent, { y: '-50%', filter: 'blur(15px)', opacity: 0, ease: 'linear' }, '<');
   }
 }
 

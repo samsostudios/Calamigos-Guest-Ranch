@@ -1,3 +1,4 @@
+import parallaxImages from '$components/parallaxImages';
 import loadComponent from '$utils/loadComponent';
 import { initSmoothScroll } from '$utils/smoothScroll';
 
@@ -12,6 +13,7 @@ window.Webflow.push(() => {
   //   console.log('clicked', e.target);
   // });
   initSmoothScroll();
+  parallaxImages();
 
   loadComponent('.component_preloader', () => import('$components/preloader'));
   loadComponent('.component_menu', () => import('$components/menu'));
