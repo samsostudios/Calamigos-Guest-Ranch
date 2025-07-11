@@ -1,11 +1,10 @@
-import { startSmoothScroll, stopSmoothScroll } from './smoothScroll';
+import { destroySmoothScroll, initSmoothScroll } from './smoothScroll';
 
 class SkipperFix {
-  private skipperButtons: HTMLElement[];
   private skipperModal: HTMLElement;
+  private isScrollDisabled = false;
 
   constructor() {
-    this.skipperButtons = [...document.querySelectorAll('.skipper_trigger')] as HTMLElement[];
     this.skipperModal = document.querySelector('#skipper-target') as HTMLElement;
 
     this.waitSkipper();
@@ -31,65 +30,25 @@ class SkipperFix {
 
     const modal = this.skipperModal;
 
-    await this.setScrollAtribute();
-
     const observer = new MutationObserver(() => {
       const isClosed =
         getComputedStyle(this.skipperModal!).display === 'none' ||
         this.skipperModal!.classList.contains('collapsed');
 
-      if (!isClosed) {
-        console.log('[SkipperFix] disabled smooth scroll');
-        stopSmoothScroll();
-        this.setScrollAtribute();
-      } else {
-        console.log('[SkipperFix] enabled smooth scroll');
-        startSmoothScroll();
+      if (!isClosed && !this.isScrollDisabled) {
+        console.log('[SkipperFix] Modal opened – disabling smooth scroll');
+        destroySmoothScroll();
+        this.isScrollDisabled = true;
+      }
+
+      if (isClosed && this.isScrollDisabled) {
+        console.log('[SkipperFix] Modal closed – enabling smooth scroll');
+        initSmoothScroll();
+        this.isScrollDisabled = false;
       }
     });
 
     observer.observe(modal, { attributes: true, attributeFilter: ['style', 'class'] });
-  }
-
-  private async setScrollAtribute() {
-    // Access shadow root of Skipper modal
-    const { shadowRoot } = this.skipperModal as Element & { shadowRoot: ShadowRoot | null };
-
-    if (!shadowRoot) {
-      console.warn('[SkipperFix] Skipper shadowRoot not found');
-      return;
-    }
-
-    try {
-      const scrollable = await this.waitForScrollable(shadowRoot);
-      scrollable.setAttribute('data-lenis-prevent', '');
-      //   console.log('[SkipperFix] Applied data-lenis-prevent to #skipper-main-content', scrollable);
-    } catch {
-      console.error('[SkipperFix] Could not find #skipper-main-content in time');
-    }
-  }
-
-  private waitForScrollable(shadowRoot: ShadowRoot): Promise<HTMLElement> {
-    return new Promise((resolve, reject) => {
-      const timeout = 5000;
-      const start = performance.now();
-
-      const check = () => {
-        const el = shadowRoot.querySelector(
-          '[data-testid="skipper-main-content"]',
-        ) as HTMLElement | null;
-        if (el) return resolve(el);
-
-        if (performance.now() - start > timeout) {
-          console.warn('[SkipperFix] Timeout: scrollable element not found');
-          return reject(null);
-        }
-
-        requestAnimationFrame(check);
-      };
-
-      check();
-    });
   }
 }
 export const skipperFix = () => {

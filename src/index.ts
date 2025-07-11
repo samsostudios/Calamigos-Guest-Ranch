@@ -13,6 +13,7 @@ window.Webflow.push(() => {
   // document.addEventListener('click', (e) => {
   //   console.log('clicked', e.target);
   // });
+
   initSmoothScroll();
   skipperFix();
   parallaxImages();

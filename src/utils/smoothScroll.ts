@@ -9,38 +9,36 @@ gsap.registerPlugin(ScrollTrigger);
 let lenis: Lenis | null = null;
 
 export function initSmoothScroll() {
-  window.addEventListener('load', () => {
-    const env = getWebflowEnv();
+  const env = getWebflowEnv();
 
-    if (env === 'editor') {
-      console.log('[SmoothScroll] Editor detected — disabling Lenis.');
-      disableScrollStyles();
-      return;
-    }
+  if (env === 'editor') {
+    console.log('[SmoothScroll] Editor detected — disabling Lenis.');
+    disableScrollStyles();
+    return;
+  }
 
-    lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.8,
-      orientation: 'vertical',
-      gestureOrientation: 'vertical',
-      smoothWheel: true,
-      infinite: false,
-    });
-
-    function raf(time: number) {
-      if (!lenis) return;
-      lenis.raf(time);
-      ScrollTrigger.update();
-      requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
-
-    // Important: recalculate ScrollTrigger points
-    ScrollTrigger.refresh();
+  lenis = new Lenis({
+    duration: 1.2,
+    easing: (t) => 1 - Math.pow(1 - t, 3), // cubic ease-out
+    wheelMultiplier: 1.0,
+    touchMultiplier: 1.8,
+    orientation: 'vertical',
+    gestureOrientation: 'vertical',
+    smoothWheel: true,
+    infinite: false,
   });
+
+  function raf(time: number) {
+    if (!lenis) return;
+    lenis.raf(time);
+    ScrollTrigger.update();
+    requestAnimationFrame(raf);
+  }
+
+  requestAnimationFrame(raf);
+
+  // Important: recalculate ScrollTrigger points
+  ScrollTrigger.refresh();
 }
 
 export function lenisInstance() {
