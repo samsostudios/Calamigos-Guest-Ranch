@@ -50,8 +50,8 @@ class FormPopup {
     );
     tl.fromTo(
       this.compoentForm,
-      { y: '3rem', opacity: 0 },
-      { duration: 1.5, y: '0rem', opacity: 1, ease: 'power4.out' },
+      { y: '50%', opacity: 0 },
+      { duration: 1.5, y: '0%', opacity: 1, ease: 'power4.out' },
       '<0.5',
     );
   }
@@ -61,7 +61,7 @@ class FormPopup {
 
     const tl = gsap.timeline();
 
-    tl.to(this.compoentForm, { duration: 1, y: '-3rem', opacity: 0, ease: 'power4.out' });
+    tl.to(this.compoentForm, { duration: 1, y: '50%', opacity: 0, ease: 'power4.out' });
     tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: 'power4.out' }, '<0.5');
     tl.set(this.component, { display: 'none' });
   }
