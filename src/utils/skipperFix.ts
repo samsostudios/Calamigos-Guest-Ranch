@@ -16,7 +16,7 @@ class SkipperFix {
       const isReady = this.skipperModal;
 
       if (isReady) {
-        console.log('skipper ready', this.skipperModal);
+        console.log('[ss.boot.skipper] => ready', this.skipperModal);
         clearInterval(interval);
         this.observeSkipper();
       }
