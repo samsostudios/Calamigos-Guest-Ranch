@@ -4,17 +4,13 @@ import { startSmoothScroll, stopSmoothScroll } from '$utils/smoothScroll';
 
 class FormPopup {
   private component: HTMLElement;
-  private toggleButtons: HTMLButtonElement[];
-  private openButton: HTMLButtonElement;
   private closeButton: HTMLButtonElement;
   private compoentForm: HTMLElement;
   private componentGlass: HTMLElement;
 
-  constructor() {
-    this.component = document.querySelector('.component_pop-form') as HTMLElement;
-    this.toggleButtons = [...document.querySelectorAll('[data-popup]')] as HTMLButtonElement[];
-    this.openButton = document.querySelector('[data-popup-open]') as HTMLButtonElement;
-    this.closeButton = document.querySelector('[data-popup-close]') as HTMLButtonElement;
+  constructor(component: HTMLElement) {
+    this.component = component;
+    this.closeButton = this.component.querySelector('[data-popup=close]') as HTMLButtonElement;
     this.compoentForm = this.component.querySelector('.pop-form_main') as HTMLElement;
     this.componentGlass = this.component.querySelector('.component_glass') as HTMLElement;
 
@@ -22,22 +18,17 @@ class FormPopup {
   }
 
   private setListeners() {
-    this.toggleButtons.forEach((button) => {
-      const action = button.getAttribute('data-popup');
-      if (!action) return;
-
-      if (action === 'open') {
-        button.addEventListener('click', () => this.openModal());
-      } else if (action === 'close') {
-        button.addEventListener('click', () => this.closeModal());
-      }
-    });
     this.componentGlass.addEventListener('click', () => {
       this.closeModal();
     });
+    if (this.closeButton) {
+      this.closeButton.addEventListener('click', () => {
+        this.closeModal();
+      });
+    }
   }
 
-  private openModal() {
+  public openModal() {
     stopSmoothScroll();
 
     const tl = gsap.timeline();
@@ -56,7 +47,7 @@ class FormPopup {
     );
   }
 
-  private closeModal() {
+  public closeModal() {
     startSmoothScroll();
 
     const tl = gsap.timeline();
@@ -67,6 +58,28 @@ class FormPopup {
   }
 }
 export const formPopup = () => {
-  new FormPopup();
+  const forms = [...document.querySelectorAll('.component_pop-form')] as HTMLElement[];
+  const instances: Record<string, FormPopup> = {};
+
+  forms.forEach((el, i) => {
+    const id = el.getAttribute('data-popup-id') || `default-${i}`;
+    instances[id] = new FormPopup(el);
+  });
+
+  const buttons = [...document.querySelectorAll('[data-popup=open]')];
+  buttons.forEach((btn) => {
+    const target = btn.getAttribute('data-popup-target') as string;
+
+    if (target && instances[target]) {
+      btn.addEventListener('click', () => instances[target].openModal());
+      console.log('[data-popup-form] => mutiple forms - using instances', instances[target]);
+    } else if (!target && forms.length === 1) {
+      const defaultInstance = Object.values(instances)[0];
+      btn.addEventListener('click', () => defaultInstance.openModal());
+      console.log('[data-popup-form] => single form - using default', defaultInstance);
+    } else {
+      console.warn('[data-popup-form] => trigger has no valid target or no popup is available');
+    }
+  });
 };
 export default formPopup;
