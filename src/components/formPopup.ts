@@ -56,6 +56,11 @@ class FormPopup {
     tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: 'power4.out' }, '<0.5');
     tl.set(this.component, { display: 'none' });
   }
+
+  private setOtherInput() {
+    const filters;
+    const input = document.querySelector('#otherInput');
+  }
 }
 export const formPopup = () => {
   const forms = [...document.querySelectorAll('.component_pop-form')] as HTMLElement[];
