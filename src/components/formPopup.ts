@@ -15,6 +15,7 @@ class FormPopup {
     this.componentGlass = this.component.querySelector('.component_glass') as HTMLElement;
 
     this.setListeners();
+    this.setOtherInput();
   }
 
   private setListeners() {
@@ -58,8 +59,9 @@ class FormPopup {
   }
 
   private setOtherInput() {
-    const filters;
-    const input = document.querySelector('#otherInput');
+    const filters = [...document.querySelectorAll('.form_radio-input')];
+    // console.log('HERE', filters);
+    // const input = document.querySelector('#otherInput');
   }
 }
 export const formPopup = () => {
@@ -72,6 +74,9 @@ export const formPopup = () => {
   });
 
   const buttons = [...document.querySelectorAll('[data-popup=open]')];
+
+  console.log('FORMS', forms, buttons);
+
   buttons.forEach((btn) => {
     const target = btn.getAttribute('data-popup-target') as string;
 

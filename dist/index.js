@@ -7948,6 +7948,7 @@
           this.compoentForm = this.component.querySelector(".pop-form_main");
           this.componentGlass = this.component.querySelector(".component_glass");
           this.setListeners();
+          this.setOtherInput();
         }
         setListeners() {
           this.componentGlass.addEventListener("click", () => {
@@ -7983,7 +7984,7 @@
           tl.set(this.component, { display: "none" });
         }
         setOtherInput() {
-          const input = document.querySelector("#otherInput");
+          const filters = [...document.querySelectorAll(".form_radio-input")];
         }
       };
       formPopup = () => {
@@ -7994,6 +7995,7 @@
           instances[id] = new FormPopup(el);
         });
         const buttons = [...document.querySelectorAll("[data-popup=open]")];
+        console.log("FORMS", forms, buttons);
         buttons.forEach((btn) => {
           const target = btn.getAttribute("data-popup-target");
           if (target && instances[target]) {
@@ -8121,6 +8123,9 @@
   window.Webflow ||= [];
   window.Webflow.push(() => {
     console.log("\u{1F30F} Calamigos Guest Ranch \u{1F343}");
+    document.addEventListener("click", (e2) => {
+      console.log("clicked", e2.target);
+    });
     initSmoothScroll();
     skipperFix_default();
     parallaxImages_default();

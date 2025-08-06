@@ -10,9 +10,9 @@ window.Webflow.push(() => {
   // const bp = breakpoints();
   // console.log('[INFO]', bp);
 
-  // document.addEventListener('click', (e) => {
-  //   console.log('clicked', e.target);
-  // });
+  document.addEventListener('click', (e) => {
+    console.log('clicked', e.target);
+  });
 
   initSmoothScroll();
   skipperFix();
