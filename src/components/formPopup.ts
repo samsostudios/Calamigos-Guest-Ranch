@@ -59,9 +59,7 @@ class FormPopup {
   }
 
   private setOtherInput() {
-    console.log('HI');
     const otherInput = this.component.querySelector('#otherRow');
-    console.log('*', otherInput);
     const filters: HTMLInputElement[] = [
       ...this.component.querySelectorAll('.form_radio-input'),
     ] as HTMLInputElement[];
@@ -81,15 +79,6 @@ class FormPopup {
         }
       });
     });
-
-    // if (otherFilter === undefined) {
-    //   console.log('no other input found');
-    // } else {
-    //   console.log('other input found');
-    //   otherFilter.addEventListener('click', () => {
-    //     if (otherInput) gsap.set(otherInput, { display: 'block' });
-    //   });
-    // }
   }
 }
 export const formPopup = () => {
@@ -103,18 +92,16 @@ export const formPopup = () => {
 
   const buttons = [...document.querySelectorAll('[data-popup=open]')];
 
-  console.log('FORMS', forms, buttons, instances);
-
   buttons.forEach((btn) => {
     const target = btn.getAttribute('data-popup-target') as string;
 
     if (target && instances[target]) {
       btn.addEventListener('click', () => instances[target].openModal());
-      console.log('[data-popup-form] => mutiple forms - using instances', instances[target]);
+      console.warn('[data-popup-form] => mutiple forms - using instances', instances[target]);
     } else if (!target && forms.length === 1) {
       const defaultInstance = Object.values(instances)[0];
       btn.addEventListener('click', () => defaultInstance.openModal());
-      console.log('[data-popup-form] => single form - using default', defaultInstance);
+      console.warn('[data-popup-form] => single form - using default', defaultInstance);
     } else {
       console.warn('[data-popup-form] => trigger has no valid target or no popup is available');
     }
