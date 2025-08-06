@@ -59,9 +59,37 @@ class FormPopup {
   }
 
   private setOtherInput() {
-    const filters = [...document.querySelectorAll('.form_radio-input')];
-    // console.log('HERE', filters);
-    // const input = document.querySelector('#otherInput');
+    console.log('HI');
+    const otherInput = this.component.querySelector('#otherRow');
+    console.log('*', otherInput);
+    const filters: HTMLInputElement[] = [
+      ...this.component.querySelectorAll('.form_radio-input'),
+    ] as HTMLInputElement[];
+    const otherFilter = filters.find((el) => el.value === 'Other');
+
+    if (!otherFilter) {
+      console.log('no other input found');
+      return;
+    }
+
+    filters.forEach((filter) => {
+      filter.addEventListener('click', () => {
+        if (filter === otherFilter) {
+          if (otherInput) gsap.set(otherInput, { display: 'block' });
+        } else {
+          if (otherInput) gsap.set(otherInput, { display: 'none' });
+        }
+      });
+    });
+
+    // if (otherFilter === undefined) {
+    //   console.log('no other input found');
+    // } else {
+    //   console.log('other input found');
+    //   otherFilter.addEventListener('click', () => {
+    //     if (otherInput) gsap.set(otherInput, { display: 'block' });
+    //   });
+    // }
   }
 }
 export const formPopup = () => {
@@ -75,7 +103,7 @@ export const formPopup = () => {
 
   const buttons = [...document.querySelectorAll('[data-popup=open]')];
 
-  console.log('FORMS', forms, buttons);
+  console.log('FORMS', forms, buttons, instances);
 
   buttons.forEach((btn) => {
     const target = btn.getAttribute('data-popup-target') as string;
