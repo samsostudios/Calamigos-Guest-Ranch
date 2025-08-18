@@ -19,8 +19,6 @@ class Selfbook {
     this.selfbookButtons = [...this.dataTags, ...this.dataClasses];
     this.isScrollDisabled = false;
 
-    console.log(';here', this.dataTags, this.dataClasses, this.selfbookButtons);
-
     this.setListeners();
     this.initModal();
   }
@@ -28,7 +26,7 @@ class Selfbook {
     this.selfbookButtons.forEach((button) => {
       button.addEventListener('click', () => {
         if (typeof window.bookNow === 'function') {
-          console.log('[selfbook] =>', button);
+          // console.log('[selfbook] =>', button);
           window.bookNow({ hotelId: 'CGRBCM' });
         } else {
           console.warn('[selfbook] => bookNow not loaded');
