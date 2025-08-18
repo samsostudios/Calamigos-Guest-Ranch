@@ -7,22 +7,28 @@ declare global {
 }
 
 class Selfbook {
-  private buttons: HTMLButtonElement[];
+  private dataTags: HTMLButtonElement[];
+  private dataClasses: HTMLElement[];
+  private selfbookButtons: HTMLElement[];
   private isScrollDisabled: boolean;
   private observer: MutationObserver | null = null;
 
   constructor() {
-    this.buttons = [...document.querySelectorAll('[data-selfbook-button]')] as HTMLButtonElement[];
+    this.dataTags = [...document.querySelectorAll('[data-selfbook-button]')] as HTMLButtonElement[];
+    this.dataClasses = [...document.querySelectorAll('.selfbook_trigger')] as HTMLButtonElement[];
+    this.selfbookButtons = [...this.dataTags, ...this.dataClasses];
     this.isScrollDisabled = false;
+
+    console.log(';here', this.dataTags, this.dataClasses, this.selfbookButtons);
 
     this.setListeners();
     this.initModal();
   }
   private setListeners() {
-    this.buttons.forEach((button) => {
+    this.selfbookButtons.forEach((button) => {
       button.addEventListener('click', () => {
         if (typeof window.bookNow === 'function') {
-          // console.log('[selfbook] => bookNow available');
+          console.log('[selfbook] =>', button);
           window.bookNow({ hotelId: 'CGRBCM' });
         } else {
           console.warn('[selfbook] => bookNow not loaded');
