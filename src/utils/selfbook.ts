@@ -12,12 +12,14 @@ class Selfbook {
   private selfbookButtons: HTMLElement[];
   private isScrollDisabled: boolean;
   private observer: MutationObserver | null = null;
+  private hotelID: string;
 
   constructor() {
     this.dataTags = [...document.querySelectorAll('[data-selfbook-button]')] as HTMLButtonElement[];
     this.dataClasses = [...document.querySelectorAll('.selfbook_trigger')] as HTMLButtonElement[];
     this.selfbookButtons = [...this.dataTags, ...this.dataClasses];
     this.isScrollDisabled = false;
+    this.hotelID = 'CGRBCM';
 
     this.setListeners();
     this.initModal();
@@ -26,8 +28,10 @@ class Selfbook {
     this.selfbookButtons.forEach((button) => {
       button.addEventListener('click', () => {
         if (typeof window.bookNow === 'function') {
-          // console.log('[selfbook] =>', button);
-          window.bookNow({ hotelId: 'CGRBCM' });
+          const roomID = button.dataset.selfbookRoom;
+
+          if (!roomID) window.bookNow({ hotelId: this.hotelID });
+          else window.bookNow({ hotelId: this.hotelID, roomId: roomID });
         } else {
           console.warn('[selfbook] => bookNow not loaded');
         }
