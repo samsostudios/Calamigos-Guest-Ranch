@@ -27,7 +27,10 @@ class FormHandler {
         e.stopPropagation();
 
         if (this.checkSpam(form)) {
-          this.showError(form, 'Something went wrong. Please try again.');
+          // this.showError(form, 'Something went wrong. Please try again.');
+          form.dispatchEvent(
+            new CustomEvent('form:error', { detail: 'Something went wrong. Please try again.' }),
+          );
           console.log('[ss.log] Spam Detection Triggered');
           return;
         }
@@ -43,18 +46,23 @@ class FormHandler {
             body: payload,
           });
           console.log('📬 Response status:', response.status);
+
           if (!response.ok) {
             const errorText = await response.text();
             console.error('[ss.log] Submission failed:', errorText);
-            this.showError(form, errorText);
+            form.dispatchEvent(new CustomEvent('form:error', { detail: errorText }));
+            return;
+            // this.showError(form, errorText);
           }
 
           const result = await response.json();
           console.log('[ss.log] Form Submitted', result);
-          this.showSuccess(form);
+          form.dispatchEvent(new CustomEvent('form:success', { detail: result }));
+          // this.showSuccess(form);
         } catch (error) {
           console.log('[ss.log] Error submitting form', error);
-          this.showError(form, error as string);
+          form.dispatchEvent(new CustomEvent('form:error', { detail: error }));
+          // this.showError(form, error as string);
         }
       });
     });
@@ -114,22 +122,6 @@ class FormHandler {
     });
 
     return data;
-  }
-
-  private showSuccess(form: HTMLFormElement) {
-    this.resetFormStatus();
-    gsap.to(form, { display: 'none' });
-    gsap.to(this.successElement, { display: 'block' });
-  }
-
-  private showError(form: HTMLFormElement, msg: string) {
-    const errorText = this.errorElement.children[0] as HTMLElement;
-    errorText.innerHTML = msg;
-    gsap.to(this.errorElement, { display: 'block' });
-  }
-
-  private resetFormStatus() {
-    gsap.to([this.successElement, this.errorElement], { display: 'none' });
   }
 }
 export const formHandler = () => {
