@@ -7,6 +7,16 @@ class FormHandler {
   private honeypotName = 'website';
   private successElement: HTMLElement;
   private errorElement: HTMLElement;
+  private guestId = {
+    enabledForms: new Set([
+      'Dining Activity From',
+      'Wellness Activity From',
+      'Beach Club Activity From',
+    ]),
+    fieldName: 'res-number',
+    validLengths: [14, 4] as const,
+    stripPattern: /[^A-Za-z0-9]+/g,
+  };
 
   constructor() {
     this.forms = [...document.querySelectorAll('form')] as HTMLFormElement[];
@@ -19,7 +29,7 @@ class FormHandler {
   private setListeners() {
     this.forms.forEach((form) => {
       this.addHoneypot(form);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (form as any).__startedAt = performance.now();
 
       form.addEventListener('submit', async (e) => {
@@ -35,35 +45,45 @@ class FormHandler {
           return;
         }
 
+        if (this.checkGuestId(form)) {
+          form.dispatchEvent(
+            new CustomEvent('form:error', {
+              detail: 'Please enter a valid reservation or member number',
+            }),
+          );
+          console.log('[ss.log] Guest Reservation Spam Detected');
+          return;
+        }
+
         const formName = form.dataset.name;
         const formData = this.serializeData(form);
         const payload = JSON.stringify({ formName, formData });
 
-        try {
-          const response = await fetch(this.endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: payload,
-          });
-          console.log('📬 Response status:', response.status);
+        // try {
+        //   const response = await fetch(this.endpoint, {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: payload,
+        //   });
+        //   console.log('📬 Response status:', response.status);
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('[ss.log] Submission failed:', errorText);
-            form.dispatchEvent(new CustomEvent('form:error', { detail: errorText }));
-            return;
-            // this.showError(form, errorText);
-          }
+        //   if (!response.ok) {
+        //     const errorText = await response.text();
+        //     console.error('[ss.log] Submission failed:', errorText);
+        //     form.dispatchEvent(new CustomEvent('form:error', { detail: errorText }));
+        //     return;
+        //     // this.showError(form, errorText);
+        //   }
 
-          const result = await response.json();
-          console.log('[ss.log] Form Submitted', result);
-          form.dispatchEvent(new CustomEvent('form:success', { detail: result }));
-          // this.showSuccess(form);
-        } catch (error) {
-          console.log('[ss.log] Error submitting form', error);
-          form.dispatchEvent(new CustomEvent('form:error', { detail: error }));
-          // this.showError(form, error as string);
-        }
+        //   const result = await response.json();
+        //   console.log('[ss.log] Form Submitted', result);
+        //   form.dispatchEvent(new CustomEvent('form:success', { detail: result }));
+        //   // this.showSuccess(form);
+        // } catch (error) {
+        //   console.log('[ss.log] Error submitting form', error);
+        //   form.dispatchEvent(new CustomEvent('form:error', { detail: error }));
+        //   // this.showError(form, error as string);
+        // }
       });
     });
   }
@@ -92,13 +112,32 @@ class FormHandler {
     const startedAt = (form as any).__startedAt ?? performance.now();
     const elapsed = performance.now() - startedAt;
 
-    console.log('!!', startedAt, elapsed);
-
     if (elapsed < this.minTime) {
-      console.log('time trap');
       return true;
     }
     return false;
+  }
+
+  private checkGuestId(form: HTMLFormElement) {
+    const input = form.querySelector(`[name="${this.guestId.fieldName}"]`) as HTMLInputElement;
+    if (!input) {
+      console.log('[ss-logs] Reservation field not found');
+      return;
+    }
+
+    const val = input.value;
+    const len = val.length;
+
+    if (!this.guestId.validLengths.includes(len as (typeof this.guestId.validLengths)[number])) {
+      console.log('Invalid reservation / member number');
+      return true;
+    }
+
+    return false;
+  }
+
+  private flagError(input: HTMLInputElement, message: string) {
+    input.setAttribute('aria-invalid', 'true');
   }
 
   private serializeData(form: HTMLFormElement) {
