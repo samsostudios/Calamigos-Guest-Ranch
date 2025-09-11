@@ -1,3 +1,5 @@
+import { gsap } from 'gsap';
+
 class FormHandler {
   private forms: HTMLFormElement[];
   private endpoint = 'https://calamigos-guest-ranch-backend.vercel.app/api/submit-form';
@@ -31,9 +33,10 @@ class FormHandler {
         e.stopPropagation();
 
         if (this.checkSpam(form)) {
-          form.dispatchEvent(
-            new CustomEvent('form:error', { detail: 'Something went wrong. Please try again.' }),
-          );
+          // form.dispatchEvent(
+          //   new CustomEvent('form:error', { detail: 'Something went wrong. Please try again.' }),
+          // );
+          this.showError(form, 'Something went wrong. Please try again.');
           console.log('[ss.log] Spam Detection Triggered');
           return;
         }
@@ -46,7 +49,7 @@ class FormHandler {
             //     detail: 'Please enter a valid reservation or member number',
             //   }),
             // );
-            this.showError(form, '');
+            this.showError(form, 'Please enter a valid reservation or member number.');
             console.log('[ss.log] Guest Reservation Spam Detected');
             return;
           }
@@ -173,32 +176,41 @@ class FormHandler {
 
   private showSuccess(form: HTMLFormElement) {
     console.log('show success', form);
+
+    const { successElement, errorElement, parentElement } = this.getStatusComponents(form);
+
+    console.log('!!!', successElement, errorElement, parentElement);
+
+    if (!successElement || !errorElement) {
+      console.log('[ss.form.error] Success or error elements not found.');
+      return;
+    }
     // if (!this.componentSuccess) return;
-    // gsap.set([this.componentForm, this.componentError], { autoAlpha: 0, display: 'none' });
-    // gsap.to(this.componentSuccess, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+    gsap.set([parentElement, errorElement], { autoAlpha: 0, display: 'none' });
+    gsap.to(successElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
   }
 
   private showError(form: HTMLFormElement, msg: string) {
     console.log('show error', form, msg);
 
-    const { successElement, errorElement } = this.getStatusCompoennts(form);
+    const { successElement, errorElement } = this.getStatusComponents(form);
 
     console.log('here', successElement, errorElement);
-    //   if (!this.componentError) return;
+    if (!successElement || !errorElement) {
+      console.log('[ss.form.error] Success or error elements not found.');
+      return;
+    }
 
-    //   const errorText = this.componentError.children[0] as HTMLElement;
-    //   errorText.innerHTML = msg;
-
-    //   gsap.to(this.componentError, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+    gsap.to(errorElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
   }
 
-  private getStatusCompoennts(form: HTMLFormElement) {
-    const parent = form.parentElement as HTMLElement;
+  private getStatusComponents(form: HTMLFormElement) {
+    const parentElement = form.parentElement as HTMLElement;
 
-    const successElement = parent.querySelector('.form_success');
-    const errorElement = parent.querySelector('.form_error');
+    const successElement = parentElement.querySelector('.form_success');
+    const errorElement = parentElement.querySelector('.form_error');
 
-    return { successElement, errorElement };
+    return { successElement, errorElement, parentElement };
   }
 }
 export const formHandler = () => {

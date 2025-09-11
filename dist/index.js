@@ -8110,6 +8110,7 @@
 
   // src/utils/formHandler.ts
   init_live_reload();
+  init_gsap();
   var FormHandler = class {
     forms;
     endpoint = "https://calamigos-guest-ranch-backend.vercel.app/api/submit-form";
@@ -8137,16 +8138,14 @@
           e2.preventDefault();
           e2.stopPropagation();
           if (this.checkSpam(form)) {
-            form.dispatchEvent(
-              new CustomEvent("form:error", { detail: "Something went wrong. Please try again." })
-            );
+            this.showError(form, "Something went wrong. Please try again.");
             console.log("[ss.log] Spam Detection Triggered");
             return;
           }
           if (this.isGuestIdEnforced(form)) {
             console.log("GUEST RES ENABLED");
             if (this.checkGuestId(form)) {
-              this.showError(form, "");
+              this.showError(form, "Please enter a valid reservation or member number.");
               console.log("[ss.log] Guest Reservation Spam Detected");
               return;
             }
@@ -8242,17 +8241,30 @@
     }
     showSuccess(form) {
       console.log("show success", form);
+      const { successElement, errorElement, parentElement } = this.getStatusComponents(form);
+      console.log("!!!", successElement, errorElement, parentElement);
+      if (!successElement || !errorElement) {
+        console.log("[ss.form.error] Success or error elements not found.");
+        return;
+      }
+      gsapWithCSS.set([parentElement, errorElement], { autoAlpha: 0, display: "none" });
+      gsapWithCSS.to(successElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
     }
     showError(form, msg) {
       console.log("show error", form, msg);
-      const { successElement, errorElement } = this.getStatusCompoennts(form);
+      const { successElement, errorElement } = this.getStatusComponents(form);
       console.log("here", successElement, errorElement);
+      if (!successElement || !errorElement) {
+        console.log("[ss.form.error] Success or error elements not found.");
+        return;
+      }
+      gsapWithCSS.to(errorElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
     }
-    getStatusCompoennts(form) {
-      const parent = form.parentElement;
-      const successElement = parent.querySelector(".form_success");
-      const errorElement = parent.querySelector(".form_error");
-      return { successElement, errorElement };
+    getStatusComponents(form) {
+      const parentElement = form.parentElement;
+      const successElement = parentElement.querySelector(".form_success");
+      const errorElement = parentElement.querySelector(".form_error");
+      return { successElement, errorElement, parentElement };
     }
   };
   var formHandler = () => {
