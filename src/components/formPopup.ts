@@ -8,8 +8,8 @@ class FormPopup {
   private componentPopup: HTMLElement;
   private componentGlass: HTMLElement;
   private componentForm: HTMLFormElement;
-  private componentSuccess: HTMLElement;
-  private componentError: HTMLElement;
+  // private componentSuccess: HTMLElement;
+  // private componentError: HTMLElement;
 
   constructor(component: HTMLElement) {
     this.component = component;
@@ -17,8 +17,8 @@ class FormPopup {
     this.componentPopup = this.component.querySelector('.pop-form_main') as HTMLElement;
     this.componentGlass = this.component.querySelector('.component_glass') as HTMLElement;
     this.componentForm = this.component.querySelector('form') as HTMLFormElement;
-    this.componentSuccess = component.querySelector('.form_success') as HTMLElement;
-    this.componentError = component.querySelector('.form_error') as HTMLElement;
+    // this.componentSuccess = component.querySelector('.form_success') as HTMLElement;
+    // this.componentError = component.querySelector('.form_error') as HTMLElement;
 
     this.setListeners();
     this.bindFormEvents();
@@ -86,21 +86,21 @@ class FormPopup {
     tl.set(this.component, { display: 'none' });
   }
 
-  private showSuccess() {
-    if (!this.componentSuccess) return;
+  // private showSuccess() {
+  //   if (!this.componentSuccess) return;
 
-    gsap.set([this.componentForm, this.componentError], { autoAlpha: 0, display: 'none' });
-    gsap.to(this.componentSuccess, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
-  }
+  //   gsap.set([this.componentForm, this.componentError], { autoAlpha: 0, display: 'none' });
+  //   gsap.to(this.componentSuccess, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+  // }
 
-  private showError(msg: string) {
-    if (!this.componentError) return;
+  // private showError(msg: string) {
+  //   if (!this.componentError) return;
 
-    const errorText = this.componentError.children[0] as HTMLElement;
-    errorText.innerHTML = msg;
+  //   const errorText = this.componentError.children[0] as HTMLElement;
+  //   errorText.innerHTML = msg;
 
-    gsap.to(this.componentError, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
-  }
+  //   gsap.to(this.componentError, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+  // }
 
   private setOtherInput() {
     const otherInput = this.component.querySelector('#otherRow');

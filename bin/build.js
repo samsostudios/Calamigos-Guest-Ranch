@@ -1,20 +1,14 @@
 /* eslint-disable no-console */
 import * as esbuild from 'esbuild';
-
 import process from 'node:process';
 
-// Config output
 const BUILD_DIRECTORY = 'dist';
 const PRODUCTION = process.env.NODE_ENV === 'production';
-
-// Config entrypoint files
 const ENTRY_POINTS = ['src/index.ts'];
-
-// Config dev serving
 const LIVE_RELOAD = !PRODUCTION;
 const SERVE_PORT = 3000;
 
-// Create context
+// Create esbuild context
 const context = await esbuild.context({
   bundle: true,
   entryPoints: ENTRY_POINTS,
@@ -24,32 +18,26 @@ const context = await esbuild.context({
   target: PRODUCTION ? 'es2019' : 'esnext',
   inject: LIVE_RELOAD ? ['./bin/live-reload.js'] : undefined,
   define: {
-    SERVE_PORT: `${SERVE_PORT}`,
+    SERVE_PORT: JSON.stringify(SERVE_PORT),
   },
 });
 
-// Build files in prod
+// Production build
 if (PRODUCTION) {
   await context.rebuild();
   context.dispose();
-}
-
-// Watch and serve files in dev
-else {
+} else {
   await context.watch();
-  await context
-    .serve({
-      servedir: BUILD_DIRECTORY,
-      port: SERVE_PORT,
-    })
-    .then(async ({ port }) => {
-      // Log all served files for easy reference
-      const origin = `http://localhost:${port}`;
-      const files = ENTRY_POINTS.map(
-        (path) => `${origin}/${path.replace('src/', '').replace('.ts', '.js')}`,
-      );
+  const { port } = await context.serve({
+    servedir: BUILD_DIRECTORY,
+    port: SERVE_PORT,
+  });
 
-      console.log('Serving at:', origin);
-      console.log('Built files:', files);
-    });
+  const origin = `http://localhost:${port}`;
+  const files = ENTRY_POINTS.map(
+    (path) => `${origin}/${path.replace('src/', '').replace('.ts', '.js')}`,
+  );
+
+  console.log('⚡ Serving at:', origin);
+  console.log('📁 Built files:', files);
 }

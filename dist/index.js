@@ -14,10 +14,9 @@
   var init_live_reload = __esm({
     "bin/live-reload.js"() {
       "use strict";
-      new EventSource(`http://localhost:${3e3}/esbuild`).addEventListener(
-        "change",
-        () => location.reload()
-      );
+      new EventSource("/esbuild").addEventListener("change", () => {
+        location.reload();
+      });
     }
   });
 
@@ -7943,16 +7942,14 @@
         componentPopup;
         componentGlass;
         componentForm;
-        componentSuccess;
-        componentError;
+        // private componentSuccess: HTMLElement;
+        // private componentError: HTMLElement;
         constructor(component) {
           this.component = component;
           this.closeButton = this.component.querySelector("[data-popup=close]");
           this.componentPopup = this.component.querySelector(".pop-form_main");
           this.componentGlass = this.component.querySelector(".component_glass");
           this.componentForm = this.component.querySelector("form");
-          this.componentSuccess = component.querySelector(".form_success");
-          this.componentError = component.querySelector(".form_error");
           this.setListeners();
           this.bindFormEvents();
           this.setOtherInput();
@@ -8007,17 +8004,17 @@
           tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: "power4.out" }, "<0.5");
           tl.set(this.component, { display: "none" });
         }
-        showSuccess() {
-          if (!this.componentSuccess) return;
-          gsapWithCSS.set([this.componentForm, this.componentError], { autoAlpha: 0, display: "none" });
-          gsapWithCSS.to(this.componentSuccess, { autoAlpha: 1, display: "block", ease: "power2.out" });
-        }
-        showError(msg) {
-          if (!this.componentError) return;
-          const errorText = this.componentError.children[0];
-          errorText.innerHTML = msg;
-          gsapWithCSS.to(this.componentError, { autoAlpha: 1, display: "block", ease: "power2.out" });
-        }
+        // private showSuccess() {
+        //   if (!this.componentSuccess) return;
+        //   gsap.set([this.componentForm, this.componentError], { autoAlpha: 0, display: 'none' });
+        //   gsap.to(this.componentSuccess, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+        // }
+        // private showError(msg: string) {
+        //   if (!this.componentError) return;
+        //   const errorText = this.componentError.children[0] as HTMLElement;
+        //   errorText.innerHTML = msg;
+        //   gsap.to(this.componentError, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
+        // }
         setOtherInput() {
           const otherInput = this.component.querySelector("#otherRow");
           const filters = [
@@ -8118,13 +8115,11 @@
     endpoint = "https://calamigos-guest-ranch-backend.vercel.app/api/submit-form";
     minTime = 1500;
     honeypotName = "website";
-    successElement;
-    errorElement;
     guestId = {
       enabledForms: /* @__PURE__ */ new Set([
-        "Dining Activity From",
-        "Wellness Activity From",
-        "Beach Club Activity From"
+        "Dining Activity Form",
+        "Wellness Activity Form",
+        "Beach Club Activity Form"
       ]),
       fieldName: "res-number",
       validLengths: [14, 4],
@@ -8132,15 +8127,13 @@
     };
     constructor() {
       this.forms = [...document.querySelectorAll("form")];
-      this.successElement = document.querySelector(".form_success");
-      this.errorElement = document.querySelector(".form_error");
       this.setListeners();
     }
     setListeners() {
       this.forms.forEach((form) => {
         this.addHoneypot(form);
         form.__startedAt = performance.now();
-        form.addEventListener("submit", async (e2) => {
+        form.addEventListener("submit", (e2) => {
           e2.preventDefault();
           e2.stopPropagation();
           if (this.checkSpam(form)) {
@@ -8150,23 +8143,20 @@
             console.log("[ss.log] Spam Detection Triggered");
             return;
           }
-          if (this.checkGuestId(form)) {
-            form.dispatchEvent(
-              new CustomEvent("form:error", {
-                detail: "Please enter a valid reservation or member number"
-              })
-            );
-            console.log("[ss.log] Guest Reservation Spam Detected");
-            return;
+          if (this.isGuestIdEnforced(form)) {
+            console.log("GUEST RES ENABLED");
+            if (this.checkGuestId(form)) {
+              this.showError(form, "");
+              console.log("[ss.log] Guest Reservation Spam Detected");
+              return;
+            }
           }
-          const formName = form.dataset.name;
-          const formData = this.serializeData(form);
-          const payload = JSON.stringify({ formName, formData });
+          this.postData(form);
         });
       });
     }
     addHoneypot(form) {
-      if (form.querySelector(`[name="${this.honeypotName}`)) return;
+      if (form.querySelector(`[name="${this.honeypotName}"]`)) return;
       const hp = document.createElement("input");
       hp.type = "text";
       hp.name = this.honeypotName;
@@ -8177,6 +8167,11 @@
       hp.style.width = "1px";
       hp.style.height = "1px";
       form.appendChild(hp);
+    }
+    isGuestIdEnforced(form) {
+      const formName = (form.dataset.name || "").trim();
+      const enforced = this.guestId.enabledForms.has(formName);
+      return enforced;
     }
     checkSpam(form) {
       const hpVal = form.querySelector(`[name="${this.honeypotName}"]`)?.value ?? "";
@@ -8194,16 +8189,13 @@
         console.log("[ss-logs] Reservation field not found");
         return;
       }
-      const val = input.value;
-      const len = val.length;
-      if (!this.guestId.validLengths.includes(len)) {
-        console.log("Invalid reservation / member number");
+      const cleaned = (input.value || "").trim().replace(this.guestId.stripPattern, "");
+      const len = cleaned.length;
+      if (len === 0) return true;
+      if (!this.guestId.validLengths.includes(len))
         return true;
-      }
+      input.value = cleaned;
       return false;
-    }
-    flagError(input, message) {
-      input.setAttribute("aria-invalid", "true");
     }
     serializeData(form) {
       const data = {};
@@ -8214,15 +8206,53 @@
           data[el.name] = el.checked;
         } else if (el.type === "radio") {
           if (el.checked) data[el.name] = el.value;
-        } else if (el.name === "cf-turnstile-response") {
-          return;
         } else if (el.name === "website") {
           return;
         } else {
           data[el.name] = el.value;
         }
       });
+      console.log("Serialized data", data);
       return data;
+    }
+    async postData(form) {
+      const formName = form.dataset.name;
+      const formData = this.serializeData(form);
+      const payload = JSON.stringify({ formName, formData });
+      try {
+        const response = await fetch(this.endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload
+        });
+        console.log("\u{1F4EC} Response status:", response.status);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("[ss.log] Submission failed:", errorText);
+          this.showError(form, errorText);
+          return;
+        }
+        const result = await response.json();
+        console.log("[ss.log] Form Submitted", result);
+        this.showSuccess(form);
+      } catch (error) {
+        console.log("[ss.log] Error submitting form", error);
+        this.showError(form, error);
+      }
+    }
+    showSuccess(form) {
+      console.log("show success", form);
+    }
+    showError(form, msg) {
+      console.log("show error", form, msg);
+      const { successElement, errorElement } = this.getStatusCompoennts(form);
+      console.log("here", successElement, errorElement);
+    }
+    getStatusCompoennts(form) {
+      const parent = form.parentElement;
+      const successElement = parent.querySelector(".form_success");
+      const errorElement = parent.querySelector(".form_error");
+      return { successElement, errorElement };
     }
   };
   var formHandler = () => {
