@@ -1,5 +1,9 @@
 import { gsap } from 'gsap';
 
+interface FormWithStartedAt extends HTMLFormElement {
+  __startedAt?: number;
+}
+
 class FormHandler {
   private forms: HTMLFormElement[];
   private endpoint = 'https://calamigos-guest-ranch-backend.vercel.app/api/submit-form';
@@ -17,7 +21,7 @@ class FormHandler {
   };
 
   constructor() {
-    this.forms = [...document.querySelectorAll('form')] as HTMLFormElement[];
+    this.forms = [...document.querySelectorAll('form')] as FormWithStartedAt[];
 
     this.setListeners();
   }
@@ -26,30 +30,22 @@ class FormHandler {
     this.forms.forEach((form) => {
       this.addHoneypot(form);
 
-      (form as any).__startedAt = performance.now();
+      form.__startedAt = performance.now();
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
         e.stopPropagation();
 
         if (this.checkSpam(form)) {
-          // form.dispatchEvent(
-          //   new CustomEvent('form:error', { detail: 'Something went wrong. Please try again.' }),
-          // );
           this.showError(form, 'Something went wrong. Please try again.');
-          console.log('[ss.log] Spam Detection Triggered');
+          console.log('[ss.forms] Spam Detection Triggered');
           return;
         }
 
         if (this.isGuestIdEnforced(form)) {
           if (this.checkGuestId(form)) {
-            // form.dispatchEvent(
-            //   new CustomEvent('form:error', {
-            //     detail: 'Please enter a valid reservation or member number',
-            //   }),
-            // );
             this.showError(form, 'Please enter a valid reservation or member number.');
-            console.log('[ss.log] Guest Reservation Spam Detected');
+            console.log('[ss.forms] Guest Reservation Spam Detected');
             return;
           }
         }
@@ -59,7 +55,7 @@ class FormHandler {
     });
   }
 
-  private addHoneypot(form: HTMLFormElement) {
+  private addHoneypot(form: FormWithStartedAt) {
     if (form.querySelector(`[name="${this.honeypotName}"]`)) return;
 
     const hp = document.createElement('input');
@@ -75,20 +71,23 @@ class FormHandler {
     form.appendChild(hp);
   }
 
-  private isGuestIdEnforced(form: HTMLFormElement): boolean {
+  private isGuestIdEnforced(form: FormWithStartedAt): boolean {
     const formName = (form.dataset.name || '').trim();
     const enforced = this.guestId.enabledForms.has(formName);
 
     return enforced;
   }
 
-  private checkSpam(form: HTMLFormElement) {
+  private checkSpam(form: FormWithStartedAt) {
     const hpVal =
       (form.querySelector(`[name="${this.honeypotName}"]`) as HTMLInputElement)?.value ?? '';
     if (hpVal) return true;
 
-    const startedAt = (form as any).__startedAt ?? performance.now();
-    const elapsed = performance.now() - startedAt;
+    if (form.startedAt === null) {
+      console.log('[ss.forms] Missing timestamp');
+      return false;
+    }
+    const elapsed = performance.now() - (form.__startedAt ?? 0);
 
     if (elapsed < this.minTime) {
       return true;
@@ -96,10 +95,10 @@ class FormHandler {
     return false;
   }
 
-  private checkGuestId(form: HTMLFormElement) {
+  private checkGuestId(form: FormWithStartedAt) {
     const input = form.querySelector(`[name="${this.guestId.fieldName}"]`) as HTMLInputElement;
     if (!input) {
-      console.log('[ss-logs] Reservation field not found');
+      console.log('[ss.forms.checkGuest] Reservation field not found');
       return true;
     }
 
@@ -115,36 +114,29 @@ class FormHandler {
     return false;
   }
 
-  private serializeData(form: HTMLFormElement) {
+  private serializeData(form: FormWithStartedAt) {
+    const fd = new FormData(form);
     const data: Record<string, unknown> = {};
-    const inputs = [...form.elements] as HTMLInputElement[];
-
-    inputs.forEach((el) => {
-      if (!el.name || el.disabled) return;
-
-      if (el.type === 'checkbox') {
-        data[el.name] = el.checked;
-      } else if (el.type === 'radio') {
-        if (el.checked) data[el.name] = el.value;
-      }
-      // else if (el.name === 'cf-turnstile-response') {
-      //   return;
-      // }
-      else if (el.name === 'website') {
-        return;
+    for (const [name, value] of fd.entries()) {
+      if (name === this.honeypotName) continue;
+      if (name in data) {
+        const prev = data[name];
+        data[name] = Array.isArray(prev) ? [...prev, value] : [prev, value];
       } else {
-        data[el.name] = el.value;
+        data[name] = value;
       }
-    });
-
-    console.log('Serialized data', data);
+    }
+    console.log('DATA', data);
     return data;
   }
 
-  private async postData(form: HTMLFormElement) {
+  private async postData(form: FormWithStartedAt) {
     const formName = form.dataset.name;
     const formData = this.serializeData(form);
     const payload = JSON.stringify({ formName, formData });
+
+    const submitBtn = form.querySelector('[type="submit"]') as HTMLButtonElement;
+    submitBtn?.setAttribute('disabled', 'true');
 
     try {
       const response = await fetch(this.endpoint, {
@@ -152,28 +144,36 @@ class FormHandler {
         headers: { 'Content-Type': 'application/json' },
         body: payload,
       });
-      console.log('📬 Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[ss.log] Submission failed:', errorText);
         this.showError(form, errorText);
-        // form.dispatchEvent(new CustomEvent('form:error', { detail: errorText }));
         return;
       }
 
       const result = await response.json();
       console.log('[ss.log] Form Submitted', result);
       this.showSuccess(form);
-      // form.dispatchEvent(new CustomEvent('form:success', { detail: result }));
     } catch (error) {
-      console.log('[ss.log] Error submitting form', error);
-      this.showError(form, error as string);
-      // form.dispatchEvent(new CustomEvent('form:error', { detail: error }));
+      const msg = String(error);
+      console.log('[ss.log] Error submitting form', msg);
+      this.showError(form, msg);
+    } finally {
+      submitBtn.removeAttribute('disabled');
     }
   }
 
-  private showSuccess(form: HTMLFormElement) {
+  private getStatusComponents(form: FormWithStartedAt) {
+    const parentElement = form.parentElement as HTMLElement;
+
+    const successElement = parentElement.querySelector('.form_success');
+    const errorElement = parentElement.querySelector('.form_error');
+
+    return { successElement, errorElement };
+  }
+
+  private showSuccess(form: FormWithStartedAt) {
     const { successElement, errorElement } = this.getStatusComponents(form);
 
     if (!successElement || !errorElement) {
@@ -185,7 +185,7 @@ class FormHandler {
     gsap.to(successElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
   }
 
-  private showError(form: HTMLFormElement, msg: string) {
+  private showError(form: FormWithStartedAt, msg: string) {
     const { successElement, errorElement } = this.getStatusComponents(form);
 
     if (!successElement || !errorElement) {
@@ -197,15 +197,6 @@ class FormHandler {
     errorText.innerText = msg;
 
     gsap.to(errorElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
-  }
-
-  private getStatusComponents(form: HTMLFormElement) {
-    const parentElement = form.parentElement as HTMLElement;
-
-    const successElement = parentElement.querySelector('.form_success');
-    const errorElement = parentElement.querySelector('.form_error');
-
-    return { successElement, errorElement };
   }
 }
 export const formHandler = () => {

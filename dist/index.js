@@ -7941,17 +7941,12 @@
         closeButton;
         componentPopup;
         componentGlass;
-        componentForm;
-        // private componentSuccess: HTMLElement;
-        // private componentError: HTMLElement;
         constructor(component) {
           this.component = component;
           this.closeButton = this.component.querySelector("[data-popup=close]");
           this.componentPopup = this.component.querySelector(".pop-form_main");
           this.componentGlass = this.component.querySelector(".component_glass");
-          this.componentForm = this.component.querySelector("form");
           this.setListeners();
-          this.bindFormEvents();
           this.setOtherInput();
         }
         setListeners() {
@@ -7963,23 +7958,6 @@
               this.closeModal();
             });
           }
-        }
-        bindFormEvents() {
-          console.log(
-            "popup",
-            this.componentPopup,
-            "component",
-            this.component,
-            "form",
-            this.componentForm
-          );
-          this.componentForm.addEventListener("form:success", () => {
-            this.showSuccess();
-          });
-          this.componentForm.addEventListener("form:error", (e2) => {
-            const msg = e2.detail;
-            this.showError(msg);
-          });
         }
         openModal() {
           stopSmoothScroll();
@@ -8004,17 +7982,6 @@
           tl.to(this.componentGlass, { duration: 1.5, opacity: 0, ease: "power4.out" }, "<0.5");
           tl.set(this.component, { display: "none" });
         }
-        // private showSuccess() {
-        //   if (!this.componentSuccess) return;
-        //   gsap.set([this.componentForm, this.componentError], { autoAlpha: 0, display: 'none' });
-        //   gsap.to(this.componentSuccess, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
-        // }
-        // private showError(msg: string) {
-        //   if (!this.componentError) return;
-        //   const errorText = this.componentError.children[0] as HTMLElement;
-        //   errorText.innerHTML = msg;
-        //   gsap.to(this.componentError, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
-        // }
         setOtherInput() {
           const otherInput = this.component.querySelector("#otherRow");
           const filters = [
@@ -8048,13 +8015,13 @@
           const target = btn.getAttribute("data-popup-target");
           if (target && instances[target]) {
             btn.addEventListener("click", () => instances[target].openModal());
-            console.warn("[data-popup-form] => mutiple forms - using instances", instances[target]);
+            console.log("[data-popup-form] => mutiple forms - using instances", instances[target]);
           } else if (!target && forms.length === 1) {
             const defaultInstance = Object.values(instances)[0];
             btn.addEventListener("click", () => defaultInstance.openModal());
-            console.warn("[data-popup-form] => single form - using default", defaultInstance);
+            console.log("[data-popup-form] => single form - using default", defaultInstance);
           } else {
-            console.warn("[data-popup-form] => trigger has no valid target or no popup is available");
+            console.log("[data-popup-form] => trigger has no valid target or no popup is available");
           }
         });
       };
@@ -8139,13 +8106,13 @@
           e2.stopPropagation();
           if (this.checkSpam(form)) {
             this.showError(form, "Something went wrong. Please try again.");
-            console.log("[ss.log] Spam Detection Triggered");
+            console.log("[ss.forms] Spam Detection Triggered");
             return;
           }
           if (this.isGuestIdEnforced(form)) {
             if (this.checkGuestId(form)) {
               this.showError(form, "Please enter a valid reservation or member number.");
-              console.log("[ss.log] Guest Reservation Spam Detected");
+              console.log("[ss.forms] Guest Reservation Spam Detected");
               return;
             }
           }
@@ -8174,8 +8141,11 @@
     checkSpam(form) {
       const hpVal = form.querySelector(`[name="${this.honeypotName}"]`)?.value ?? "";
       if (hpVal) return true;
-      const startedAt = form.__startedAt ?? performance.now();
-      const elapsed = performance.now() - startedAt;
+      if (form.startedAt === null) {
+        console.log("[ss.forms] Missing timestamp");
+        return false;
+      }
+      const elapsed = performance.now() - (form.__startedAt ?? 0);
       if (elapsed < this.minTime) {
         return true;
       }
@@ -8184,7 +8154,7 @@
     checkGuestId(form) {
       const input = form.querySelector(`[name="${this.guestId.fieldName}"]`);
       if (!input) {
-        console.log("[ss-logs] Reservation field not found");
+        console.log("[ss.forms.checkGuest] Reservation field not found");
         return true;
       }
       const cleaned = (input.value || "").trim().replace(this.guestId.stripPattern, "");
@@ -8196,34 +8166,32 @@
       return false;
     }
     serializeData(form) {
+      const fd = new FormData(form);
       const data = {};
-      const inputs = [...form.elements];
-      inputs.forEach((el) => {
-        if (!el.name || el.disabled) return;
-        if (el.type === "checkbox") {
-          data[el.name] = el.checked;
-        } else if (el.type === "radio") {
-          if (el.checked) data[el.name] = el.value;
-        } else if (el.name === "website") {
-          return;
+      for (const [name, value] of fd.entries()) {
+        if (name === this.honeypotName) continue;
+        if (name in data) {
+          const prev = data[name];
+          data[name] = Array.isArray(prev) ? [...prev, value] : [prev, value];
         } else {
-          data[el.name] = el.value;
+          data[name] = value;
         }
-      });
-      console.log("Serialized data", data);
+      }
+      console.log("DATA", data);
       return data;
     }
     async postData(form) {
       const formName = form.dataset.name;
       const formData = this.serializeData(form);
       const payload = JSON.stringify({ formName, formData });
+      const submitBtn = form.querySelector('[type="submit"]');
+      submitBtn?.setAttribute("disabled", "true");
       try {
         const response = await fetch(this.endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: payload
         });
-        console.log("\u{1F4EC} Response status:", response.status);
         if (!response.ok) {
           const errorText = await response.text();
           console.error("[ss.log] Submission failed:", errorText);
@@ -8234,9 +8202,18 @@
         console.log("[ss.log] Form Submitted", result);
         this.showSuccess(form);
       } catch (error) {
-        console.log("[ss.log] Error submitting form", error);
-        this.showError(form, error);
+        const msg = String(error);
+        console.log("[ss.log] Error submitting form", msg);
+        this.showError(form, msg);
+      } finally {
+        submitBtn.removeAttribute("disabled");
       }
+    }
+    getStatusComponents(form) {
+      const parentElement = form.parentElement;
+      const successElement = parentElement.querySelector(".form_success");
+      const errorElement = parentElement.querySelector(".form_error");
+      return { successElement, errorElement };
     }
     showSuccess(form) {
       const { successElement, errorElement } = this.getStatusComponents(form);
@@ -8256,12 +8233,6 @@
       const errorText = errorElement.children[0];
       errorText.innerText = msg;
       gsapWithCSS.to(errorElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
-    }
-    getStatusComponents(form) {
-      const parentElement = form.parentElement;
-      const successElement = parentElement.querySelector(".form_success");
-      const errorElement = parentElement.querySelector(".form_error");
-      return { successElement, errorElement };
     }
   };
   var formHandler = () => {
