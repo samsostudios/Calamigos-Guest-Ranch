@@ -42,7 +42,6 @@ class FormHandler {
         }
 
         if (this.isGuestIdEnforced(form)) {
-          console.log('GUEST RES ENABLED');
           if (this.checkGuestId(form)) {
             // form.dispatchEvent(
             //   new CustomEvent('form:error', {
@@ -101,7 +100,7 @@ class FormHandler {
     const input = form.querySelector(`[name="${this.guestId.fieldName}"]`) as HTMLInputElement;
     if (!input) {
       console.log('[ss-logs] Reservation field not found');
-      return;
+      return true;
     }
 
     const cleaned = (input.value || '').trim().replace(this.guestId.stripPattern, '');
@@ -175,31 +174,27 @@ class FormHandler {
   }
 
   private showSuccess(form: HTMLFormElement) {
-    console.log('show success', form);
-
-    const { successElement, errorElement, parentElement } = this.getStatusComponents(form);
-
-    console.log('!!!', successElement, errorElement, parentElement);
+    const { successElement, errorElement } = this.getStatusComponents(form);
 
     if (!successElement || !errorElement) {
       console.log('[ss.form.error] Success or error elements not found.');
       return;
     }
-    // if (!this.componentSuccess) return;
-    gsap.set([parentElement, errorElement], { autoAlpha: 0, display: 'none' });
+
+    gsap.set([form, errorElement], { autoAlpha: 0, display: 'none' });
     gsap.to(successElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
   }
 
   private showError(form: HTMLFormElement, msg: string) {
-    console.log('show error', form, msg);
-
     const { successElement, errorElement } = this.getStatusComponents(form);
 
-    console.log('here', successElement, errorElement);
     if (!successElement || !errorElement) {
       console.log('[ss.form.error] Success or error elements not found.');
       return;
     }
+
+    const errorText = errorElement.children[0] as HTMLElement;
+    errorText.innerText = msg;
 
     gsap.to(errorElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });
   }
@@ -210,7 +205,7 @@ class FormHandler {
     const successElement = parentElement.querySelector('.form_success');
     const errorElement = parentElement.querySelector('.form_error');
 
-    return { successElement, errorElement, parentElement };
+    return { successElement, errorElement };
   }
 }
 export const formHandler = () => {

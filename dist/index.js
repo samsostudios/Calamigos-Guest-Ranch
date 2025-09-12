@@ -8143,7 +8143,6 @@
             return;
           }
           if (this.isGuestIdEnforced(form)) {
-            console.log("GUEST RES ENABLED");
             if (this.checkGuestId(form)) {
               this.showError(form, "Please enter a valid reservation or member number.");
               console.log("[ss.log] Guest Reservation Spam Detected");
@@ -8186,7 +8185,7 @@
       const input = form.querySelector(`[name="${this.guestId.fieldName}"]`);
       if (!input) {
         console.log("[ss-logs] Reservation field not found");
-        return;
+        return true;
       }
       const cleaned = (input.value || "").trim().replace(this.guestId.stripPattern, "");
       const len = cleaned.length;
@@ -8240,31 +8239,29 @@
       }
     }
     showSuccess(form) {
-      console.log("show success", form);
-      const { successElement, errorElement, parentElement } = this.getStatusComponents(form);
-      console.log("!!!", successElement, errorElement, parentElement);
+      const { successElement, errorElement } = this.getStatusComponents(form);
       if (!successElement || !errorElement) {
         console.log("[ss.form.error] Success or error elements not found.");
         return;
       }
-      gsapWithCSS.set([parentElement, errorElement], { autoAlpha: 0, display: "none" });
+      gsapWithCSS.set([form, errorElement], { autoAlpha: 0, display: "none" });
       gsapWithCSS.to(successElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
     }
     showError(form, msg) {
-      console.log("show error", form, msg);
       const { successElement, errorElement } = this.getStatusComponents(form);
-      console.log("here", successElement, errorElement);
       if (!successElement || !errorElement) {
         console.log("[ss.form.error] Success or error elements not found.");
         return;
       }
+      const errorText = errorElement.children[0];
+      errorText.innerText = msg;
       gsapWithCSS.to(errorElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
     }
     getStatusComponents(form) {
       const parentElement = form.parentElement;
       const successElement = parentElement.querySelector(".form_success");
       const errorElement = parentElement.querySelector(".form_error");
-      return { successElement, errorElement, parentElement };
+      return { successElement, errorElement };
     }
   };
   var formHandler = () => {
