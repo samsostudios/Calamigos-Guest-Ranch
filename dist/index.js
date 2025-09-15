@@ -8177,7 +8177,6 @@
           data[name] = value;
         }
       }
-      console.log("DATA", data);
       return data;
     }
     async postData(form) {

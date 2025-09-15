@@ -126,7 +126,6 @@ class FormHandler {
         data[name] = value;
       }
     }
-    console.log('DATA', data);
     return data;
   }
 
