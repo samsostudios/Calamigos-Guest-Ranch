@@ -135,8 +135,15 @@ class FormHandler {
     const payload = JSON.stringify({ formName, formData });
 
     const submitBtn = form.querySelector('[type="submit"]') as HTMLButtonElement;
-    submitBtn?.setAttribute('disabled', 'true');
+    const ogText = submitBtn.value;
+    const waitText = submitBtn.dataset.wait;
 
+    console.log('text', submitBtn, waitText);
+
+    if (submitBtn) {
+      submitBtn.setAttribute('disabled', 'true');
+      submitBtn.value = waitText || 'Submitting...';
+    }
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
@@ -160,6 +167,7 @@ class FormHandler {
       this.showError(form, msg);
     } finally {
       submitBtn.removeAttribute('disabled');
+      submitBtn.innerText = ogText || 'Submit';
     }
   }
 
