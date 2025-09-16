@@ -8186,7 +8186,7 @@
       const submitBtn = form.querySelector('[type="submit"]');
       const ogText = submitBtn.value;
       const waitText = submitBtn.dataset.wait;
-      console.log("text", submitBtn, waitText);
+      console.log("made payload", payload);
       if (submitBtn) {
         submitBtn.setAttribute("disabled", "true");
         submitBtn.value = waitText || "Submitting...";

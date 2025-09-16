@@ -138,8 +138,6 @@ class FormHandler {
     const ogText = submitBtn.value;
     const waitText = submitBtn.dataset.wait;
 
-    console.log('text', submitBtn, waitText);
-
     if (submitBtn) {
       submitBtn.setAttribute('disabled', 'true');
       submitBtn.value = waitText || 'Submitting...';
