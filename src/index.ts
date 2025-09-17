@@ -1,5 +1,6 @@
+import formHandler from 'src/forms/formHandler';
+
 import parallaxImages from '$components/parallaxImages';
-import formHandler from '$utils/formHandler';
 import loadComponent from '$utils/loadComponent';
 import selfbook from '$utils/selfbook';
 // import skipperFix from '$utils/skipperFix';
@@ -28,5 +29,5 @@ window.Webflow.push(() => {
   loadComponent('[data-hero-parallax]', () => import('$components/heroParallax'));
   loadComponent('.component_slider-full', () => import('$components/sliderFade'));
   loadComponent('.component_slider-bento', () => import('$components/bentoSlider'));
-  loadComponent('.component_pop-form', () => import('$components/formPopup'));
+  loadComponent('.component_pop-form', () => import('src/forms/formPopup'));
 });

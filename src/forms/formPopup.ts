@@ -66,7 +66,7 @@ class FormPopup {
     const otherFilter = filters.find((el) => el.value === 'Other');
 
     if (!otherFilter) {
-      console.log('no other input found');
+      // console.log('no other input found');
       return;
     }
 
@@ -98,11 +98,11 @@ export const formPopup = () => {
 
     if (target && instances[target]) {
       btn.addEventListener('click', () => instances[target].openModal());
-      console.log('[data-popup-form] => mutiple forms - using instances', instances[target]);
+      // console.log('[data-popup-form] => mutiple forms - using instances', instances[target]);
     } else if (!target && forms.length === 1) {
       const defaultInstance = Object.values(instances)[0];
       btn.addEventListener('click', () => defaultInstance.openModal());
-      console.log('[data-popup-form] => single form - using default', defaultInstance);
+      // console.log('[data-popup-form] => single form - using default', defaultInstance);
     } else {
       console.log('[data-popup-form] => trigger has no valid target or no popup is available');
     }

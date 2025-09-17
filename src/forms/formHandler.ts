@@ -1,20 +1,22 @@
 import { gsap } from 'gsap';
 
+import { handleHiddenFields } from '$forms/formUtils';
+
 interface FormWithStartedAt extends HTMLFormElement {
   __startedAt?: number;
 }
 
 class FormHandler {
-  private forms: HTMLFormElement[];
+  private forms: FormWithStartedAt[];
   private endpoint = 'https://calamigos-guest-ranch-backend.vercel.app/api/submit-form';
   private minTime = 1500;
   private honeypotName = 'website';
   private guestId = {
-    enabledForms: new Set([
-      'Dining Activity Form',
-      'Wellness Activity Form',
-      'Beach Club Activity Form',
-    ]),
+    // enabledForms: new Set([
+    //   'Dining Activity Form',
+    //   'Wellness Activity Form',
+    //   'Beach Club Activity Form',
+    // ]),
     fieldName: 'res-number',
     validLengths: [14, 4] as const,
     stripPattern: /[^A-Za-z0-9]+/g,
@@ -23,12 +25,15 @@ class FormHandler {
   constructor() {
     this.forms = [...document.querySelectorAll('form')] as FormWithStartedAt[];
 
+    console.log('FORM HANDLER');
+
     this.setListeners();
   }
 
   private setListeners() {
     this.forms.forEach((form) => {
       this.addHoneypot(form);
+      handleHiddenFields(form);
 
       form.__startedAt = performance.now();
 
@@ -71,19 +76,12 @@ class FormHandler {
     form.appendChild(hp);
   }
 
-  private isGuestIdEnforced(form: FormWithStartedAt): boolean {
-    const formName = (form.dataset.name || '').trim();
-    const enforced = this.guestId.enabledForms.has(formName);
-
-    return enforced;
-  }
-
   private checkSpam(form: FormWithStartedAt) {
     const hpVal =
       (form.querySelector(`[name="${this.honeypotName}"]`) as HTMLInputElement)?.value ?? '';
     if (hpVal) return true;
 
-    if (form.startedAt === null) {
+    if (form.__startedAt == null) {
       console.log('[ss.forms] Missing timestamp');
       return false;
     }
@@ -95,6 +93,17 @@ class FormHandler {
     return false;
   }
 
+  private isGuestIdEnforced(form: FormWithStartedAt): boolean {
+    const reqAttr = form.getAttribute('data-requires-guest-id');
+    if (reqAttr === null) return false;
+
+    const val = (reqAttr || '').trim().toLowerCase();
+    const enforced = val === '' || val === 'true' || val === '1' || val === 'yes';
+
+    // console.log('enforced', enforced);
+    return enforced;
+  }
+
   private checkGuestId(form: FormWithStartedAt) {
     const input = form.querySelector(`[name="${this.guestId.fieldName}"]`) as HTMLInputElement;
     if (!input) {
@@ -102,6 +111,7 @@ class FormHandler {
       return true;
     }
 
+    console.log('checking', input);
     const cleaned = (input.value || '').trim().replace(this.guestId.stripPattern, '');
     const len = cleaned.length;
 
@@ -135,6 +145,10 @@ class FormHandler {
     const payload = JSON.stringify({ formName, formData });
 
     const submitBtn = form.querySelector('[type="submit"]') as HTMLButtonElement;
+    if (!submitBtn) {
+      console.log('[ss.log] Submit button not found');
+      return;
+    }
     const ogText = submitBtn.value;
     const waitText = submitBtn.dataset.wait;
 
@@ -150,9 +164,12 @@ class FormHandler {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[ss.log] Submission failed:', errorText);
-        this.showError(form, errorText);
+        // const errorText = await response.text();
+        const errorJson = await response.json();
+        const errorText = errorJson.message || 'Something went wrong. Please try again.';
+        console.log('!!!', errorJson, errorText);
+        // console.error('[ss.log] Submission failed:', errorText);
+        // this.showError(form, errorText);
         return;
       }
 
@@ -160,9 +177,10 @@ class FormHandler {
       console.log('[ss.log] Form Submitted', result);
       this.showSuccess(form);
     } catch (error) {
-      const msg = String(error);
-      console.log('[ss.log] Error submitting form', msg);
-      this.showError(form, msg);
+      console.log('ERROR', error);
+      // const msg = String(error);
+      // console.log('[ss.log] Error submitting form', msg, error);
+      // this.showError(form, msg);
     } finally {
       submitBtn.removeAttribute('disabled');
       submitBtn.innerText = ogText || 'Submit';
