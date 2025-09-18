@@ -8037,23 +8037,24 @@
   init_live_reload();
   function handleHiddenFields(form) {
     const hiddenFields = [...form.querySelectorAll("[data-show-when]")];
-    const hiddenToggles = [...form.querySelector("[data-]")];
-    const hiddenGroups = [];
     if (!hiddenFields.length) {
       console.log("no hidden fields detected on", form.name);
       return;
     }
-    console.log("detected hidden fields on", form.name, hiddenFields);
-    hiddenFields.forEach((field) => {
-      const cast = field;
-      const attr = cast.dataset.showWhen;
-      findFieldToggle(attr);
-    });
+    const groups = groupShowWhenData(hiddenFields);
+    findFieldToggle(form, groups);
   }
-  function findFieldToggle(attr) {
-    console.log("find", attr);
-    const [type, value] = attr.split("-");
-    console.log(type, value);
+  function groupShowWhenData(elements) {
+    const groups = {};
+    elements.forEach((el) => {
+      const key = el.dataset.showWhen;
+      if (!key) return;
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(el);
+    });
+    return groups;
   }
 
   // src/forms/formHandler.ts
