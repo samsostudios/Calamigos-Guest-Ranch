@@ -8036,20 +8036,28 @@
   init_live_reload();
   init_gsap();
   var HiddenFieldsController = class {
+    form;
     hiddenFields;
     constructor(form) {
+      this.form = form;
       this.hiddenFields = [...form.querySelectorAll("[data-show-when]")];
       if (!this.hiddenFields.length) {
         console.log("no hidden fields detected on", form.name);
         return;
       }
-      this.handleHiddenFields(form);
+      this.handleHiddenFields();
     }
-    handleHiddenFields(form) {
+    handleHiddenFields() {
       const groups = this.groupShowWhenData(this.hiddenFields);
-      const result = this.attachTriggers(form, groups);
-      console.log("result", result);
+      const result = this.attachTriggers(groups);
       this.setListeners(result);
+      for (const g of result) {
+        if (g.trigger?.checked) {
+          this.showFields(g.inputs);
+        } else {
+          this.hideFields(g.inputs);
+        }
+      }
     }
     groupShowWhenData(elements) {
       const groups = {};
@@ -8063,33 +8071,36 @@
       });
       return groups;
     }
-    attachTriggers(form, groups) {
+    attachTriggers(groups) {
       const out = [];
       for (const [name, inputs] of Object.entries(groups)) {
         const [type, value] = this.splitTypeValue(name);
-        const trigger = this.findTrigger(form, type, value);
-        out.push({ name, inputs, trigger });
+        const trigger = this.findTrigger(type, value);
+        if (!trigger) {
+          console.log("[ss.hiddenConroller] no trigger found for ", this.form.name);
+          continue;
+        }
+        const siblings = this.findSiblings(trigger);
+        const groupLabel = trigger.name;
+        out.push({ name, inputs, trigger, siblings, groupLabel });
       }
       return out;
     }
     setListeners(data) {
-      console.log("data", data);
-      data.forEach((item) => {
-        console.log("***", item.trigger);
-        const trigger = item.trigger;
-        trigger.addEventListener("click", () => {
-          console.log("click", trigger, item.inputs);
-          this.showFields(item.inputs);
-        });
-      });
-    }
-    // UI
-    showFields(inputs) {
-      console.log("show", inputs);
-      gsapWithCSS.to(inputs, { backgroundColor: "yellow" });
-    }
-    hideFields(inputs) {
-      console.log("hide");
+      for (const group of data) {
+        if (!group.trigger) continue;
+        if (group.trigger.type === "radio" && group.groupLabel) {
+          group.trigger.addEventListener("change", () => {
+            this.showFields(group.inputs);
+          });
+          group.siblings.forEach((sibling) => {
+            sibling.addEventListener("change", () => {
+              this.hideFields(group.inputs);
+              this.removeRequire(group.inputs);
+            });
+          });
+        }
+      }
     }
     // Utils
     splitTypeValue(key) {
@@ -8099,17 +8110,56 @@
       const value = key.slice(idx + 1);
       return [type, value];
     }
-    findTrigger(form, type, value) {
-      const selector3 = form.querySelector(
-        `input[type=${type}][value=${this.capitalizeFirst(value)}]`
+    findTrigger(type, value) {
+      return this.form.querySelector(
+        `input[type="${this.css(type)}"][value="${this.css(value)}" i]`
       );
-      return selector3;
     }
-    getRelatedToggles(ref2) {
+    findSiblings(trigger) {
+      const sel = `input[type="radio"][name="${this.css(trigger.name)}"]`;
+      const radios = [...this.form.querySelectorAll(sel)];
+      return radios.filter((r) => r !== trigger);
+    }
+    css(s) {
+      return s.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     }
     capitalizeFirst(str) {
       if (!str) return str;
       return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+    setRequire(inputs) {
+      for (const input of inputs) {
+        const find = input.querySelector("input");
+        if (find) find.required = true;
+      }
+    }
+    removeRequire(inputs) {
+      for (const input of inputs) {
+        const find = input.querySelector("input");
+        if (find) find.required = false;
+      }
+    }
+    // UI
+    showFields(inputs) {
+      gsapWithCSS.killTweensOf(inputs);
+      const tl = gsapWithCSS.timeline();
+      tl.set(inputs, { display: "block" });
+      tl.fromTo(
+        inputs,
+        { opacity: 0 },
+        {
+          opacity: 1,
+          duration: 0.5,
+          ease: "power2.out"
+        }
+      );
+      this.setRequire(inputs);
+    }
+    hideFields(inputs) {
+      gsapWithCSS.killTweensOf(inputs);
+      const tl = gsapWithCSS.timeline();
+      tl.to(inputs, { opacity: 0, duration: 0.5, ease: "power2.out" });
+      tl.set(inputs, { display: "none" }, "<");
     }
   };
   var hidenFieldController = (form) => {

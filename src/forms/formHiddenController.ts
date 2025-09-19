@@ -3,28 +3,39 @@ import { gsap } from 'gsap';
 interface HiddenGroup {
   name: string;
   inputs: HTMLElement[];
-  trigger: HTMLElement | null;
+  trigger: HTMLInputElement | null;
+  siblings: HTMLInputElement[];
+  groupLabel: string;
 }
 
 class HiddenFieldsController {
+  private form: HTMLFormElement;
   private hiddenFields: HTMLElement[];
   constructor(form: HTMLFormElement) {
+    this.form = form;
+
     this.hiddenFields = [...form.querySelectorAll('[data-show-when]')] as HTMLElement[];
     if (!this.hiddenFields.length) {
       console.log('no hidden fields detected on', form.name);
       return;
     }
 
-    this.handleHiddenFields(form);
+    this.handleHiddenFields();
   }
 
-  private handleHiddenFields(form: HTMLFormElement) {
+  private handleHiddenFields() {
     const groups = this.groupShowWhenData(this.hiddenFields);
-    const result = this.attachTriggers(form, groups);
-
-    console.log('result', result);
+    const result = this.attachTriggers(groups);
 
     this.setListeners(result);
+
+    for (const g of result) {
+      if (g.trigger?.checked) {
+        this.showFields(g.inputs);
+      } else {
+        this.hideFields(g.inputs);
+      }
+    }
   }
 
   private groupShowWhenData(elements: HTMLElement[]) {
@@ -42,39 +53,41 @@ class HiddenFieldsController {
     return groups;
   }
 
-  private attachTriggers(form: HTMLFormElement, groups: Record<string, HTMLElement[]>) {
+  private attachTriggers(groups: Record<string, HTMLElement[]>) {
     const out: HiddenGroup[] = [];
 
     for (const [name, inputs] of Object.entries(groups)) {
       const [type, value] = this.splitTypeValue(name);
-      const trigger = this.findTrigger(form, type, value) as HTMLElement;
-      out.push({ name, inputs, trigger });
-      // console.log('^^^', type, value, trigger);
+      const trigger = this.findTrigger(type, value);
+      if (!trigger) {
+        console.log('[ss.hiddenConroller] no trigger found for ', this.form.name);
+        continue;
+      }
+      const siblings = this.findSiblings(trigger);
+      const groupLabel = trigger.name;
+      out.push({ name, inputs, trigger, siblings, groupLabel });
     }
     return out;
   }
 
   private setListeners(data: HiddenGroup[]) {
-    console.log('data', data);
+    for (const group of data) {
+      if (!group.trigger) continue;
 
-    data.forEach((item) => {
-      console.log('***', item.trigger);
-      const trigger = item.trigger as HTMLElement;
-      trigger.addEventListener('click', () => {
-        console.log('click', trigger, item.inputs);
-        this.showFields(item.inputs);
-      });
-    });
-  }
+      if (group.trigger.type === 'radio' && group.groupLabel) {
+        group.trigger.addEventListener('change', () => {
+          this.showFields(group.inputs);
+        });
 
-  // UI
-  private showFields(inputs: HTMLElement[]) {
-    console.log('show', inputs);
-    gsap.to(inputs, { backgroundColor: 'yellow' });
-  }
-
-  private hideFields(inputs: HTMLElement[]) {
-    console.log('hide');
+        group.siblings.forEach((sibling) => {
+          sibling.addEventListener('change', () => {
+            this.hideFields(group.inputs);
+            this.removeRequire(group.inputs);
+          });
+        });
+      }
+      // Add checkbox logic here
+    }
   }
 
   // Utils
@@ -86,18 +99,64 @@ class HiddenFieldsController {
     return [type, value];
   }
 
-  private findTrigger(form: HTMLFormElement, type: string, value: string) {
-    const selector = form.querySelector(
-      `input[type=${type}][value=${this.capitalizeFirst(value)}]`,
+  private findTrigger(type: string, value: string): HTMLInputElement | null {
+    return this.form.querySelector<HTMLInputElement>(
+      `input[type="${this.css(type)}"][value="${this.css(value)}" i]`,
     );
-    return selector;
   }
 
-  private getRelatedToggles(ref: HTMLElement) {}
+  private findSiblings(trigger: HTMLInputElement) {
+    const sel = `input[type="radio"][name="${this.css(trigger.name)}"]`;
+    const radios = [...this.form.querySelectorAll<HTMLInputElement>(sel)];
+    return radios.filter((r) => r !== trigger);
+  }
+
+  private css(s: string) {
+    return s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  }
 
   private capitalizeFirst(str: string): string {
     if (!str) return str;
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+
+  private setRequire(inputs: HTMLElement[]) {
+    for (const input of inputs) {
+      const find = input.querySelector('input') as HTMLInputElement;
+      if (find) find.required = true;
+    }
+  }
+
+  private removeRequire(inputs: HTMLElement[]) {
+    for (const input of inputs) {
+      const find = input.querySelector('input') as HTMLInputElement;
+      if (find) find.required = false;
+    }
+  }
+
+  // UI
+  private showFields(inputs: HTMLElement[]) {
+    gsap.killTweensOf(inputs);
+    const tl = gsap.timeline();
+    tl.set(inputs, { display: 'block' });
+    tl.fromTo(
+      inputs,
+      { opacity: 0 },
+      {
+        opacity: 1,
+        duration: 0.5,
+        ease: 'power2.out',
+      },
+    );
+
+    this.setRequire(inputs);
+  }
+
+  private hideFields(inputs: HTMLElement[]) {
+    gsap.killTweensOf(inputs);
+    const tl = gsap.timeline();
+    tl.to(inputs, { opacity: 0, duration: 0.5, ease: 'power2.out' });
+    tl.set(inputs, { display: 'none' }, '<');
   }
 }
 
