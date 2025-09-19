@@ -7947,7 +7947,6 @@
           this.componentPopup = this.component.querySelector(".pop-form_main");
           this.componentGlass = this.component.querySelector(".component_glass");
           this.setListeners();
-          this.setOtherInput();
         }
         setListeners() {
           this.componentGlass.addEventListener("click", () => {
@@ -8033,29 +8032,89 @@
   init_live_reload();
   init_gsap();
 
-  // src/forms/formUtils.ts
+  // src/forms/formHiddenController.ts
   init_live_reload();
-  function handleHiddenFields(form) {
-    const hiddenFields = [...form.querySelectorAll("[data-show-when]")];
-    if (!hiddenFields.length) {
-      console.log("no hidden fields detected on", form.name);
-      return;
-    }
-    const groups = groupShowWhenData(hiddenFields);
-    findFieldToggle(form, groups);
-  }
-  function groupShowWhenData(elements) {
-    const groups = {};
-    elements.forEach((el) => {
-      const key = el.dataset.showWhen;
-      if (!key) return;
-      if (!groups[key]) {
-        groups[key] = [];
+  init_gsap();
+  var HiddenFieldsController = class {
+    hiddenFields;
+    constructor(form) {
+      this.hiddenFields = [...form.querySelectorAll("[data-show-when]")];
+      if (!this.hiddenFields.length) {
+        console.log("no hidden fields detected on", form.name);
+        return;
       }
-      groups[key].push(el);
-    });
-    return groups;
-  }
+      this.handleHiddenFields(form);
+    }
+    handleHiddenFields(form) {
+      const groups = this.groupShowWhenData(this.hiddenFields);
+      const result = this.attachTriggers(form, groups);
+      console.log("result", result);
+      this.setListeners(result);
+    }
+    groupShowWhenData(elements) {
+      const groups = {};
+      elements.forEach((el) => {
+        const key = el.dataset.showWhen;
+        if (!key) return;
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(el);
+      });
+      return groups;
+    }
+    attachTriggers(form, groups) {
+      const out = [];
+      for (const [name, inputs] of Object.entries(groups)) {
+        const [type, value] = this.splitTypeValue(name);
+        const trigger = this.findTrigger(form, type, value);
+        out.push({ name, inputs, trigger });
+      }
+      return out;
+    }
+    setListeners(data) {
+      console.log("data", data);
+      data.forEach((item) => {
+        console.log("***", item.trigger);
+        const trigger = item.trigger;
+        trigger.addEventListener("click", () => {
+          console.log("click", trigger, item.inputs);
+          this.showFields(item.inputs);
+        });
+      });
+    }
+    // UI
+    showFields(inputs) {
+      console.log("show", inputs);
+      gsapWithCSS.to(inputs, { backgroundColor: "yellow" });
+    }
+    hideFields(inputs) {
+      console.log("hide");
+    }
+    // Utils
+    splitTypeValue(key) {
+      const idx = key.indexOf("-");
+      if (idx === -1) return [key, ""];
+      const type = key.slice(0, idx);
+      const value = key.slice(idx + 1);
+      return [type, value];
+    }
+    findTrigger(form, type, value) {
+      const selector3 = form.querySelector(
+        `input[type=${type}][value=${this.capitalizeFirst(value)}]`
+      );
+      return selector3;
+    }
+    getRelatedToggles(ref2) {
+    }
+    capitalizeFirst(str) {
+      if (!str) return str;
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+  };
+  var hidenFieldController = (form) => {
+    new HiddenFieldsController(form);
+  };
 
   // src/forms/formHandler.ts
   var FormHandler = class {
@@ -8081,7 +8140,7 @@
     setListeners() {
       this.forms.forEach((form) => {
         this.addHoneypot(form);
-        handleHiddenFields(form);
+        hidenFieldController(form);
         form.__startedAt = performance.now();
         form.addEventListener("submit", (e2) => {
           e2.preventDefault();

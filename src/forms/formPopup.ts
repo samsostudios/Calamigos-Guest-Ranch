@@ -15,7 +15,7 @@ class FormPopup {
     this.componentGlass = this.component.querySelector('.component_glass') as HTMLElement;
 
     this.setListeners();
-    this.setOtherInput();
+    // this.setOtherInput();
   }
 
   private setListeners() {

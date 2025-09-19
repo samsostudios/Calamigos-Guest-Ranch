@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 
-import { handleHiddenFields } from '$forms/formUtils';
+import { hidenFieldController } from '$forms/formHiddenController';
 
 interface FormWithStartedAt extends HTMLFormElement {
   __startedAt?: number;
@@ -33,7 +33,8 @@ class FormHandler {
   private setListeners() {
     this.forms.forEach((form) => {
       this.addHoneypot(form);
-      handleHiddenFields(form);
+      // handleHiddenFields(form);
+      hidenFieldController(form);
 
       form.__startedAt = performance.now();
 
