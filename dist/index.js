@@ -8399,70 +8399,52 @@
   // src/utils/selfbook.ts
   init_live_reload();
   init_smoothScroll();
-  var Selfbook = class {
-    dataTags;
-    dataClasses;
-    selfbookButtons;
-    isScrollDisabled;
-    observer = null;
-    hotelID;
+
+  // src/utils/skipperFix.ts
+  init_live_reload();
+  init_smoothScroll();
+  var SkipperFix = class {
+    skipperModal;
+    isScrollDisabled = false;
     constructor() {
-      this.dataTags = [...document.querySelectorAll("[data-selfbook-button]")];
-      this.dataClasses = [...document.querySelectorAll(".selfbook_trigger")];
-      this.selfbookButtons = [...this.dataTags, ...this.dataClasses];
-      this.isScrollDisabled = false;
-      this.hotelID = "CGRBCM";
-      this.setListeners();
-      this.initModal();
+      this.skipperModal = document.querySelector("#skipper-target");
+      this.waitSkipper();
     }
-    setListeners() {
-      this.selfbookButtons.forEach((button) => {
-        button.addEventListener("click", () => {
-          if (typeof window.bookNow === "function") {
-            const roomID = button.dataset.selfbookRoom;
-            if (!roomID) window.bookNow({ hotelId: this.hotelID });
-            else window.bookNow({ hotelId: this.hotelID, roomId: roomID });
-          } else {
-            console.warn("[selfbook] => bookNow not loaded");
-          }
-        });
-      });
-    }
-    initModal() {
+    waitSkipper() {
       const interval = setInterval(() => {
-        const modal = document.querySelector("#selfbook_sdkwidget_wrapper");
-        if (modal) {
+        this.skipperModal = document.querySelector("#skipper-target");
+        const isReady = this.skipperModal;
+        if (isReady) {
+          console.log("[ss.boot.skipper] => ready", this.skipperModal);
           clearInterval(interval);
-          console.log("[selfbook] => Modal ready");
-          this.observerModal(modal);
+          this.observeSkipper();
         }
       }, 200);
+      setTimeout(() => clearInterval(interval), 5e3);
     }
-    observerModal(modal) {
+    async observeSkipper() {
+      if (!this.skipperModal) return;
+      const modal = this.skipperModal;
       const observer = new MutationObserver(() => {
-        const isVisible = parseFloat(modal.style.backgroundColor.split(",")[3]) > 0 && // alpha > 0
-        parseInt(modal.style.zIndex || "0") > 0;
-        if (isVisible && !this.isScrollDisabled) {
-          console.log("[selfbook] Modal opened");
+        const isClosed = getComputedStyle(this.skipperModal).display === "none" || this.skipperModal.classList.contains("collapsed");
+        if (!isClosed && !this.isScrollDisabled) {
+          console.log("[SkipperFix] Modal opened \u2013 disabling smooth scroll");
           destroySmoothScroll();
           this.isScrollDisabled = true;
         }
-        if (!isVisible && this.isScrollDisabled) {
-          console.log("[selfbook] Modal closed");
+        if (isClosed && this.isScrollDisabled) {
+          console.log("[SkipperFix] Modal closed \u2013 enabling smooth scroll");
           initSmoothScroll();
           this.isScrollDisabled = false;
         }
       });
-      observer.observe(modal, {
-        attributes: true,
-        attributeFilter: ["style", "class"]
-      });
+      observer.observe(modal, { attributes: true, attributeFilter: ["style", "class"] });
     }
   };
-  var selfbook = () => {
-    new Selfbook();
+  var skipperFix = () => {
+    new SkipperFix();
   };
-  var selfbook_default = selfbook;
+  var skipperFix_default = skipperFix;
 
   // src/index.ts
   init_smoothScroll();
@@ -8470,8 +8452,8 @@
   window.Webflow.push(() => {
     console.log("\u{1F30F} Calamigos Guest Ranch \u{1F343}");
     initSmoothScroll();
+    skipperFix_default();
     parallaxImages_default();
-    selfbook_default();
     formHandler_default();
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));

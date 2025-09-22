@@ -3,7 +3,7 @@ import formHandler from 'src/forms/formHandler';
 import parallaxImages from '$components/parallaxImages';
 import loadComponent from '$utils/loadComponent';
 import selfbook from '$utils/selfbook';
-// import skipperFix from '$utils/skipperFix';
+import skipperFix from '$utils/skipperFix';
 import { initSmoothScroll } from '$utils/smoothScroll';
 
 window.Webflow ||= [];
@@ -18,9 +18,9 @@ window.Webflow.push(() => {
   // });
 
   initSmoothScroll();
-  // skipperFix();
+  skipperFix();
   parallaxImages();
-  selfbook();
+  // selfbook();
   formHandler();
 
   loadComponent('.component_preloader', () => import('$components/preloader'));
