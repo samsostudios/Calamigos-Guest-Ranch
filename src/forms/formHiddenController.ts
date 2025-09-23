@@ -8,7 +8,7 @@ interface HiddenGroup {
   groupLabel: string;
 }
 
-class HiddenFieldsController {
+class FormHiddenController {
   private form: HTMLFormElement;
   private hiddenFields: HTMLElement[];
   constructor(form: HTMLFormElement) {
@@ -160,7 +160,7 @@ class HiddenFieldsController {
   }
 }
 
-export const hidenFieldController = (form: HTMLFormElement) => {
-  new HiddenFieldsController(form);
+export const formHiddenController = (form: HTMLFormElement) => {
+  new FormHiddenController(form);
 };
-export default hidenFieldController;
+export default formHiddenController;

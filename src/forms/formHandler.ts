@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 
-import { hidenFieldController } from '$forms/formHiddenController';
+import { formHiddenController } from '$forms/formHiddenController';
 
 interface FormWithStartedAt extends HTMLFormElement {
   __startedAt?: number;
@@ -12,11 +12,6 @@ class FormHandler {
   private minTime = 1500;
   private honeypotName = 'website';
   private guestId = {
-    // enabledForms: new Set([
-    //   'Dining Activity Form',
-    //   'Wellness Activity Form',
-    //   'Beach Club Activity Form',
-    // ]),
     fieldName: 'res-number',
     validLengths: [14, 4] as const,
     stripPattern: /[^A-Za-z0-9]+/g,
@@ -24,19 +19,22 @@ class FormHandler {
 
   constructor() {
     this.forms = [...document.querySelectorAll('form')] as FormWithStartedAt[];
-
-    console.log('FORM HANDLER');
-
     this.setListeners();
   }
 
   private setListeners() {
     this.forms.forEach((form) => {
       this.addHoneypot(form);
-      // handleHiddenFields(form);
-      hidenFieldController(form);
+      formHiddenController(form);
 
       form.__startedAt = performance.now();
+      form.addEventListener(
+        'input',
+        () => {
+          form.__startedAt ??= performance.now();
+        },
+        { once: true },
+      );
 
       form.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -69,6 +67,7 @@ class FormHandler {
     hp.name = this.honeypotName;
     hp.autocomplete = 'off';
     hp.setAttribute('aria-hidden', 'true');
+    hp.setAttribute('tabindex', '-1');
     hp.style.position = 'absolute';
     hp.style.left = '-5000px';
     hp.style.width = '1px';
@@ -101,7 +100,6 @@ class FormHandler {
     const val = (reqAttr || '').trim().toLowerCase();
     const enforced = val === '' || val === 'true' || val === '1' || val === 'yes';
 
-    // console.log('enforced', enforced);
     return enforced;
   }
 
@@ -111,8 +109,6 @@ class FormHandler {
       console.log('[ss.forms.checkGuest] Reservation field not found');
       return true;
     }
-
-    console.log('checking', input);
     const cleaned = (input.value || '').trim().replace(this.guestId.stripPattern, '');
     const len = cleaned.length;
 
@@ -142,6 +138,11 @@ class FormHandler {
 
   private async postData(form: FormWithStartedAt) {
     const formName = form.dataset.name;
+    if (!formName) {
+      console.warn('[ss.forms] Missing data-name on form');
+      this.showError(form, 'Form misconfigured. Please try again later.');
+      return;
+    }
     const formData = this.serializeData(form);
     const payload = JSON.stringify({ formName, formData });
 
@@ -157,34 +158,38 @@ class FormHandler {
       submitBtn.setAttribute('disabled', 'true');
       submitBtn.value = waitText || 'Submitting...';
     }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: payload,
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
-        // const errorText = await response.text();
-        const errorJson = await response.json();
-        const errorText = errorJson.message || 'Something went wrong. Please try again.';
-        // console.log('!!!', errorJson, errorText);
-        console.error('[ss.log] Submission failed:', errorText);
-        this.showError(form, errorText);
-        return;
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.message || 'Submission failed');
       }
 
       const result = await response.json();
       console.log('[ss.log] Form Submitted', result);
       this.showSuccess(form);
-    } catch (error) {
-      console.log('ERROR', error);
-      // const msg = String(error);
-      // console.log('[ss.log] Error submitting form', msg, error);
-      // this.showError(form, msg);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        this.showError(form, 'Request timed out. Please try again.');
+      } else {
+        this.showError(form, 'Something went wrong. Please try again.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       submitBtn.removeAttribute('disabled');
-      submitBtn.innerText = ogText || 'Submit';
+      submitBtn.value = ogText || 'Submit';
     }
   }
 
@@ -217,7 +222,9 @@ class FormHandler {
       return;
     }
 
-    const errorText = errorElement.children[0] as HTMLElement;
+    const errorText = (errorElement.querySelector('[data-error-text]') ||
+      errorElement.firstElementChild ||
+      errorElement) as HTMLElement;
     errorText.innerText = msg;
 
     gsap.to(errorElement, { autoAlpha: 1, display: 'block', ease: 'power2.out' });

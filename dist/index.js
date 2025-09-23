@@ -8035,7 +8035,7 @@
   // src/forms/formHiddenController.ts
   init_live_reload();
   init_gsap();
-  var HiddenFieldsController = class {
+  var FormHiddenController = class {
     form;
     hiddenFields;
     constructor(form) {
@@ -8162,8 +8162,8 @@
       tl.set(inputs, { display: "none" }, "<");
     }
   };
-  var hidenFieldController = (form) => {
-    new HiddenFieldsController(form);
+  var formHiddenController = (form) => {
+    new FormHiddenController(form);
   };
 
   // src/forms/formHandler.ts
@@ -8173,25 +8173,26 @@
     minTime = 1500;
     honeypotName = "website";
     guestId = {
-      // enabledForms: new Set([
-      //   'Dining Activity Form',
-      //   'Wellness Activity Form',
-      //   'Beach Club Activity Form',
-      // ]),
       fieldName: "res-number",
       validLengths: [14, 4],
       stripPattern: /[^A-Za-z0-9]+/g
     };
     constructor() {
       this.forms = [...document.querySelectorAll("form")];
-      console.log("FORM HANDLER");
       this.setListeners();
     }
     setListeners() {
       this.forms.forEach((form) => {
         this.addHoneypot(form);
-        hidenFieldController(form);
+        formHiddenController(form);
         form.__startedAt = performance.now();
+        form.addEventListener(
+          "input",
+          () => {
+            form.__startedAt ??= performance.now();
+          },
+          { once: true }
+        );
         form.addEventListener("submit", (e2) => {
           e2.preventDefault();
           e2.stopPropagation();
@@ -8218,6 +8219,7 @@
       hp.name = this.honeypotName;
       hp.autocomplete = "off";
       hp.setAttribute("aria-hidden", "true");
+      hp.setAttribute("tabindex", "-1");
       hp.style.position = "absolute";
       hp.style.left = "-5000px";
       hp.style.width = "1px";
@@ -8250,7 +8252,6 @@
         console.log("[ss.forms.checkGuest] Reservation field not found");
         return true;
       }
-      console.log("checking", input);
       const cleaned = (input.value || "").trim().replace(this.guestId.stripPattern, "");
       const len = cleaned.length;
       if (len === 0) return true;
@@ -8275,6 +8276,11 @@
     }
     async postData(form) {
       const formName = form.dataset.name;
+      if (!formName) {
+        console.warn("[ss.forms] Missing data-name on form");
+        this.showError(form, "Form misconfigured. Please try again later.");
+        return;
+      }
       const formData = this.serializeData(form);
       const payload = JSON.stringify({ formName, formData });
       const submitBtn = form.querySelector('[type="submit"]');
@@ -8288,27 +8294,33 @@
         submitBtn.setAttribute("disabled", "true");
         submitBtn.value = waitText || "Submitting...";
       }
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1e4);
       try {
         const response = await fetch(this.endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: payload
+          body: payload,
+          signal: controller.signal
         });
+        clearTimeout(timeoutId);
         if (!response.ok) {
-          const errorJson = await response.json();
-          const errorText = errorJson.message || "Something went wrong. Please try again.";
-          console.error("[ss.log] Submission failed:", errorText);
-          this.showError(form, errorText);
-          return;
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.message || "Submission failed");
         }
         const result = await response.json();
         console.log("[ss.log] Form Submitted", result);
         this.showSuccess(form);
-      } catch (error) {
-        console.log("ERROR", error);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          this.showError(form, "Request timed out. Please try again.");
+        } else {
+          this.showError(form, "Something went wrong. Please try again.");
+        }
       } finally {
+        clearTimeout(timeoutId);
         submitBtn.removeAttribute("disabled");
-        submitBtn.innerText = ogText || "Submit";
+        submitBtn.value = ogText || "Submit";
       }
     }
     getStatusComponents(form) {
@@ -8332,7 +8344,7 @@
         console.log("[ss.form.error] Success or error elements not found.");
         return;
       }
-      const errorText = errorElement.children[0];
+      const errorText = errorElement.querySelector("[data-error-text]") || errorElement.firstElementChild || errorElement;
       errorText.innerText = msg;
       gsapWithCSS.to(errorElement, { autoAlpha: 1, display: "block", ease: "power2.out" });
     }
