@@ -168,9 +168,9 @@ class FormHandler {
         // const errorText = await response.text();
         const errorJson = await response.json();
         const errorText = errorJson.message || 'Something went wrong. Please try again.';
-        console.log('!!!', errorJson, errorText);
-        // console.error('[ss.log] Submission failed:', errorText);
-        // this.showError(form, errorText);
+        // console.log('!!!', errorJson, errorText);
+        console.error('[ss.log] Submission failed:', errorText);
+        this.showError(form, errorText);
         return;
       }
 
