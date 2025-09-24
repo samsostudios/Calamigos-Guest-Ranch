@@ -20,7 +20,7 @@ window.Webflow.push(() => {
   initSmoothScroll();
   skipperFix();
   parallaxImages();
-  // selfbook();
+  selfbook();
   formHandler();
 
   loadComponent('.component_preloader', () => import('$components/preloader'));
