@@ -23,6 +23,7 @@ window.Webflow.push(() => {
   selfbook();
   formHandler();
 
+  loadComponent('.component_consent', () => import('$utils/cookieConsent/cookieConsent'));
   loadComponent('.component_preloader', () => import('$components/preloader'));
   loadComponent('.component_menu', () => import('$components/menu'));
   loadComponent('.component_transition', () => import('$components/pageTransition'));

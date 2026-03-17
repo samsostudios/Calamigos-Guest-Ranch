@@ -6964,6 +6964,159 @@
     }
   });
 
+  // src/utils/cookieConsent/config.ts
+  var TRACKING_CONFIG;
+  var init_config = __esm({
+    "src/utils/cookieConsent/config.ts"() {
+      "use strict";
+      init_live_reload();
+      TRACKING_CONFIG = {
+        essential: [],
+        analytics: [
+          {
+            id: "gtm",
+            name: "Google Tag Manager",
+            load: () => {
+              if (document.querySelector('script[data-consent-service="gtm"]')) return;
+              const script = document.createElement("script");
+              script.dataset.consentService = "gtm";
+              script.innerHTML = `
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','GTM-K44D3F5G');
+        `;
+              document.head.appendChild(script);
+            }
+          }
+          // {
+          //   id: 'clarity',
+          //   name: 'Microsoft Clarity',
+          //   load: () => {
+          //     if (document.querySelector('script[data-consent-service="clarity"]')) return;
+          //     const script = document.createElement('script');
+          //     script.dataset.consentService = 'clarity';
+          //     script.type = 'text/javascript';
+          //     script.innerHTML = `
+          //       (function(c,l,a,r,i,t,y){
+          //           c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+          //           t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+          //           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          //       })(window, document, "clarity", "script", "sdcchev5bi");
+          //     `;
+          //     document.head.appendChild(script);
+          //   },
+          // },
+        ]
+      };
+    }
+  });
+
+  // src/utils/cookieConsent/cookieConsent.ts
+  var cookieConsent_exports = {};
+  __export(cookieConsent_exports, {
+    cookieConsent: () => cookieConsent,
+    default: () => cookieConsent_default
+  });
+  var CookieConsent, cookieConsent, cookieConsent_default;
+  var init_cookieConsent = __esm({
+    "src/utils/cookieConsent/cookieConsent.ts"() {
+      "use strict";
+      init_live_reload();
+      init_gsap();
+      init_config();
+      CookieConsent = class {
+        component;
+        customOptions;
+        acceptutton;
+        customizeButton;
+        cookieOptions;
+        consentKey = "cookieConsent";
+        constructor() {
+          this.component = document.querySelector(".component_consent");
+          this.customOptions = this.$("#customOptions");
+          this.acceptutton = this.$("#agreeCookies");
+          this.customizeButton = this.$("#customizeCookies");
+          this.cookieOptions = [
+            ...this.component.querySelectorAll(".form_checkbox-input")
+          ];
+          this.init();
+        }
+        init() {
+          if (!this.component) return;
+          if (!localStorage.getItem(this.consentKey)) {
+            this.revealComponent();
+          }
+          this.setListeners();
+        }
+        setListeners() {
+          this.acceptutton.addEventListener("click", () => {
+            this.setCookie("accepted");
+            this.enableTracking();
+          });
+          this.customizeButton.addEventListener("click", () => {
+            this.revealOptions();
+          });
+        }
+        setCookie(status) {
+          localStorage.setItem(this.consentKey, status);
+          this.dismissComponent();
+        }
+        enableTracking() {
+          if (!this.cookieOptions) return;
+          this.cookieOptions.forEach((item) => {
+            if (item.checked) {
+              if (item.name === "analytics") {
+                TRACKING_CONFIG.analytics.forEach((service) => {
+                  service.load();
+                });
+              }
+            }
+          });
+        }
+        revealComponent() {
+          const tl = gsapWithCSS.timeline();
+          tl.set(this.component, { display: "flex", autoAlpha: 0, yPercent: 100 });
+          tl.to(
+            this.component,
+            {
+              delay: 7,
+              autoAlpha: 1,
+              yPercent: 0,
+              duration: 1,
+              ease: "power4.inOut"
+            },
+            "<"
+          );
+        }
+        dismissComponent() {
+          const tl = gsapWithCSS.timeline();
+          tl.to(this.component, { autoAlpha: 0, yPercent: 100, duration: 1, ease: "power4.inOut" });
+        }
+        revealOptions() {
+          const tl = gsapWithCSS.timeline();
+          tl.set(this.customOptions, { display: "flex", autoAlpha: 0 });
+          tl.to(this.customOptions, {
+            autoAlpha: 1,
+            duration: 0.5,
+            ease: "power3.out"
+          });
+          this.acceptutton.innerHTML = "Save";
+        }
+        $(selector3) {
+          const el = this.component.querySelector(selector3);
+          if (!el) throw new Error(`Missing element: ${selector3}`);
+          return el;
+        }
+      };
+      cookieConsent = () => {
+        new CookieConsent();
+      };
+      cookieConsent_default = cookieConsent;
+    }
+  });
+
   // node_modules/gsap/DrawSVGPlugin.js
   var gsap4, _toArray2, _doc5, _win5, _isEdge, _coreInitted4, _warned, _getStyleSaver3, _reverting3, _windowExists7, _getGSAP5, _numExp2, _types, _round5, _parseNum, _parseSingleVal, _getAttributeAsNumber, _sqrt2, _getDistance, _warn3, _hasNonScalingStroke, _bonusValidated, _parse, _getLength, _getPosition, _initCore5, DrawSVGPlugin;
   var init_DrawSVGPlugin = __esm({
@@ -8533,6 +8686,7 @@
     parallaxImages_default();
     selfbook_default();
     formHandler_default();
+    loadComponent_default(".component_consent", () => Promise.resolve().then(() => (init_cookieConsent(), cookieConsent_exports)));
     loadComponent_default(".component_preloader", () => Promise.resolve().then(() => (init_preloader(), preloader_exports)));
     loadComponent_default(".component_menu", () => Promise.resolve().then(() => (init_menu(), menu_exports)));
     loadComponent_default(".component_transition", () => Promise.resolve().then(() => (init_pageTransition(), pageTransition_exports)));
