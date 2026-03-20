@@ -6971,7 +6971,6 @@
       "use strict";
       init_live_reload();
       TRACKING_CONFIG = {
-        essential: [],
         analytics: [
           {
             id: "gtm",
@@ -6989,26 +6988,27 @@
         `;
               document.head.appendChild(script);
             }
+          },
+          {
+            id: "clarity",
+            name: "Microsoft Clarity",
+            load: () => {
+              if (document.querySelector('script[data-consent-service="clarity"]')) return;
+              const script = document.createElement("script");
+              script.dataset.consentService = "clarity";
+              script.type = "text/javascript";
+              script.innerHTML = `
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "sdcchev5bi");
+        `;
+              document.head.appendChild(script);
+            }
           }
-          // {
-          //   id: 'clarity',
-          //   name: 'Microsoft Clarity',
-          //   load: () => {
-          //     if (document.querySelector('script[data-consent-service="clarity"]')) return;
-          //     const script = document.createElement('script');
-          //     script.dataset.consentService = 'clarity';
-          //     script.type = 'text/javascript';
-          //     script.innerHTML = `
-          //       (function(c,l,a,r,i,t,y){
-          //           c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          //           t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          //           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-          //       })(window, document, "clarity", "script", "sdcchev5bi");
-          //     `;
-          //     document.head.appendChild(script);
-          //   },
-          // },
-        ]
+        ],
+        marketing: []
       };
     }
   });
@@ -7029,14 +7029,14 @@
       CookieConsent = class {
         component;
         customOptions;
-        acceptutton;
+        acceptButton;
         customizeButton;
         cookieOptions;
         consentKey = "cookieConsent";
         constructor() {
           this.component = document.querySelector(".component_consent");
           this.customOptions = this.$("#customOptions");
-          this.acceptutton = this.$("#agreeCookies");
+          this.acceptButton = this.$("#agreeCookies");
           this.customizeButton = this.$("#customizeCookies");
           this.cookieOptions = [
             ...this.component.querySelectorAll(".form_checkbox-input")
@@ -7044,35 +7044,68 @@
           this.init();
         }
         init() {
-          if (!this.component) return;
-          if (!localStorage.getItem(this.consentKey)) {
+          const savedConsent = this.getConsent();
+          console.log("saved", savedConsent);
+          if (!savedConsent) {
             this.revealComponent();
+          } else {
+            this.applyTracking(savedConsent);
           }
           this.setListeners();
         }
         setListeners() {
-          this.acceptutton.addEventListener("click", () => {
-            this.setCookie("accepted");
-            this.enableTracking();
+          this.acceptButton.addEventListener("click", () => {
+            const isCustomMode = this.acceptButton?.textContent === "Save";
+            if (isCustomMode) {
+              const consent = this.getSelections("customized");
+              this.saveConsent(consent);
+              this.applyTracking(consent);
+            } else {
+              const consent = {
+                essential: true,
+                analytics: true,
+                marketing: true,
+                status: "accepted"
+              };
+              this.updateCheckboxes(consent);
+              this.saveConsent(consent);
+              this.applyTracking(consent);
+            }
+            this.dismissComponent();
           });
           this.customizeButton.addEventListener("click", () => {
             this.revealOptions();
           });
         }
-        setCookie(status) {
-          localStorage.setItem(this.consentKey, status);
-          this.dismissComponent();
+        getSelections(status) {
+          const analytics = this.cookieOptions.find((item) => item.name === "analytics")?.checked ?? false;
+          const marketing = this.cookieOptions.find((item) => item.name === "marketing")?.checked ?? false;
+          return { essential: true, analytics, marketing, status };
         }
-        enableTracking() {
-          if (!this.cookieOptions) return;
+        saveConsent(consent) {
+          console.log("[SaveConsent]", this.consentKey, consent);
+          localStorage.setItem(this.consentKey, JSON.stringify(consent));
+        }
+        getConsent() {
+          const raw = localStorage.getItem(this.consentKey);
+          if (!raw) return null;
+          try {
+            return JSON.parse(raw);
+          } catch {
+            return null;
+          }
+        }
+        applyTracking(consent) {
+          if (consent.analytics) {
+            TRACKING_CONFIG.analytics.forEach((service) => {
+              service.load();
+            });
+          }
+        }
+        updateCheckboxes(consent) {
           this.cookieOptions.forEach((item) => {
-            if (item.checked) {
-              if (item.name === "analytics") {
-                TRACKING_CONFIG.analytics.forEach((service) => {
-                  service.load();
-                });
-              }
-            }
+            if (item.name === "analytics") item.checked = consent.analytics;
+            if (item.name === "marketing") item.checked = consent.marketing;
           });
         }
         revealComponent() {
@@ -7096,13 +7129,26 @@
         }
         revealOptions() {
           const tl = gsapWithCSS.timeline();
-          tl.set(this.customOptions, { display: "flex", autoAlpha: 0 });
-          tl.to(this.customOptions, {
-            autoAlpha: 1,
-            duration: 0.5,
-            ease: "power3.out"
+          tl.set(this.customOptions, { display: "flex", autoAlpha: 0, height: 0 });
+          tl.to(
+            this.customOptions,
+            {
+              autoAlpha: 1,
+              height: this.getOptionsHeight(),
+              duration: 0.5,
+              ease: "power3.out"
+            },
+            "<"
+          );
+          this.acceptButton.innerHTML = "Save";
+        }
+        getOptionsHeight() {
+          gsapWithCSS.set(this.customOptions, { position: "absolute", left: "99999px", display: "flex" });
+          const optionsHeight = this.customOptions.clientHeight;
+          gsapWithCSS.set(this.customOptions, {
+            clearProps: "position,left,display"
           });
-          this.acceptutton.innerHTML = "Save";
+          return optionsHeight;
         }
         $(selector3) {
           const el = this.component.querySelector(selector3);

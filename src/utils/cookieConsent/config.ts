@@ -1,4 +1,4 @@
-export type ConsentCategory = 'essential' | 'analytics';
+export type ConsentCategory = 'analytics' | 'marketing';
 export type TrackingService = {
   id: string;
   name: string;
@@ -6,8 +6,14 @@ export type TrackingService = {
 };
 export type TrackingConfig = Record<ConsentCategory, TrackingService[]>;
 
+export type ConsentState = {
+  essential: true;
+  analytics: boolean;
+  marketing: boolean;
+  status: 'accepted' | 'customized' | 'declined';
+};
+
 export const TRACKING_CONFIG: TrackingConfig = {
-  essential: [],
   analytics: [
     {
       id: 'gtm',
@@ -27,24 +33,25 @@ export const TRACKING_CONFIG: TrackingConfig = {
         document.head.appendChild(script);
       },
     },
-    // {
-    //   id: 'clarity',
-    //   name: 'Microsoft Clarity',
-    //   load: () => {
-    //     if (document.querySelector('script[data-consent-service="clarity"]')) return;
+    {
+      id: 'clarity',
+      name: 'Microsoft Clarity',
+      load: () => {
+        if (document.querySelector('script[data-consent-service="clarity"]')) return;
 
-    //     const script = document.createElement('script');
-    //     script.dataset.consentService = 'clarity';
-    //     script.type = 'text/javascript';
-    //     script.innerHTML = `
-    //       (function(c,l,a,r,i,t,y){
-    //           c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-    //           t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-    //           y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    //       })(window, document, "clarity", "script", "sdcchev5bi");
-    //     `;
-    //     document.head.appendChild(script);
-    //   },
-    // },
+        const script = document.createElement('script');
+        script.dataset.consentService = 'clarity';
+        script.type = 'text/javascript';
+        script.innerHTML = `
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "sdcchev5bi");
+        `;
+        document.head.appendChild(script);
+      },
+    },
   ],
+  marketing: [],
 };
