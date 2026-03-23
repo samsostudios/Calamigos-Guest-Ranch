@@ -27,7 +27,7 @@ class CookieConsent {
 
   private init() {
     const savedConsent = this.getConsent();
-    console.log('saved', savedConsent);
+    // console.log('saved', savedConsent);
 
     if (!savedConsent) {
       this.revealComponent();
@@ -75,7 +75,7 @@ class CookieConsent {
   }
 
   private saveConsent(consent: ConsentState) {
-    console.log('[SaveConsent]', this.consentKey, consent);
+    // console.log('[SaveConsent]', this.consentKey, consent);
     localStorage.setItem(this.consentKey, JSON.stringify(consent));
   }
 
