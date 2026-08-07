@@ -26,7 +26,9 @@ class Selfbook {
   }
   private setListeners() {
     this.selfbookButtons.forEach((button) => {
-      button.addEventListener('click', () => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+
         if (typeof window.bookNow === 'function') {
           const roomID = button.dataset.selfbookRoom;
 
