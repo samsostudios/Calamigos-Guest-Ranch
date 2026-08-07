@@ -96,7 +96,11 @@ class PageTransition {
       const isNotAnchor = !temp.href.includes('#');
       const isNotExternal = link.target !== '_blank';
 
-      const isExcluded = /(w-commerce|cart_)/.test(classList);
+      const isExcluded =
+        /(w-commerce|cart_)/.test(classList) ||
+        link.classList.contains('selfbook_trigger') ||
+        link.hasAttribute('data-selfbook-button') ||
+        temp.searchParams.get('selfbook') === 'true';
 
       return isInternal && isNotAnchor && isNotExternal && !isExcluded;
     });
