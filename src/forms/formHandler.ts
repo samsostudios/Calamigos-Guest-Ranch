@@ -8,7 +8,8 @@ interface FormWithStartedAt extends HTMLFormElement {
 
 class FormHandler {
   private forms: FormWithStartedAt[];
-  private endpoint = 'https://calamigos-guest-ranch-backend.vercel.app/api/submit-form';
+  private vercelEndpoint = 'https://calamigos-guest-ranch-backend.vercel.app/api/submit-form';
+  private mailchimpEndpoint = 'https://calamigos-ranch-mailchimp.vercel.app/api/subscribe';
   private minTime = 1500;
   private honeypotName = 'website';
   private guestId = {
@@ -137,14 +138,45 @@ class FormHandler {
   }
 
   private async postData(form: FormWithStartedAt) {
-    const formName = form.dataset.name;
-    if (!formName) {
-      console.warn('[ss.forms] Missing data-name on form');
-      this.showError(form, 'Form misconfigured. Please try again later.');
-      return;
-    }
     const formData = this.serializeData(form);
-    const payload = JSON.stringify({ formName, formData });
+    const isMailchimpForm = form.dataset.formDestination === 'mailchimp';
+
+    let endpoint: string;
+    let payload: unknown;
+
+    console.log('FORM DATA', formData);
+
+    if (isMailchimpForm) {
+      console.log('Mailchimp');
+      const { email } = formData;
+      const turnstileToken = formData['cf-turnstile-response'];
+
+      if (typeof email !== 'string' || typeof turnstileToken !== 'string') {
+        this.showError(form, 'Please complete the email and security chekck');
+        return;
+      }
+
+      endpoint = this.mailchimpEndpoint;
+      payload = {
+        email: email.trim(),
+        turnstileToken,
+      };
+    } else {
+      console.log('Vercel');
+
+      const formName = form.dataset.name;
+      if (!formName) {
+        console.warn('[ss.forms] Missing data-name on form');
+        this.showError(form, 'Form misconfigured. Please try again later.');
+        return;
+      }
+
+      endpoint = this.vercelEndpoint;
+      payload = {
+        formName,
+        formData: formData,
+      };
+    }
 
     const submitBtn = form.querySelector('[type="submit"]') as HTMLButtonElement;
     if (!submitBtn) {
@@ -163,29 +195,29 @@ class FormHandler {
     const timeoutId = setTimeout(() => controller.abort(), 10000);
 
     try {
-      const response = await fetch(this.endpoint, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: payload,
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.message || 'Submission failed');
+        throw new Error(`Submission failed: ${response.status}`);
       }
 
       const result = await response.json();
       console.log('[ss.log] Form Submitted', result);
       this.showSuccess(form);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') {
-        this.showError(form, 'Request timed out. Please try again.');
-      } else {
-        this.showError(form, 'Something went wrong. Please try again.');
-      }
+    } catch (error) {
+      const message =
+        error instanceof DOMException && error.name === 'AbortError'
+          ? 'Request timed out. Please try again.'
+          : 'Something went wrong. Please try again.';
+
+      this.showError(form, message);
     } finally {
       clearTimeout(timeoutId);
       submitBtn.removeAttribute('disabled');
