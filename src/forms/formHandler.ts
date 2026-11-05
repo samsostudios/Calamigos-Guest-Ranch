@@ -144,10 +144,18 @@ class FormHandler {
     let endpoint: string;
     let payload: unknown;
 
-    console.log('FORM DATA', formData);
+    // console.log('FORM DATA', formData);
 
     if (isMailchimpForm) {
-      console.log('Mailchimp');
+      // console.log('Mailchimp');
+
+      const consent = form.querySelector<HTMLInputElement>('[name="consent"]')?.checked === true;
+
+      if (!consent) {
+        this.showError(form, 'Please agree to receive email updates.');
+        return;
+      }
+
       const { email } = formData;
       const turnstileToken = formData['cf-turnstile-response'];
 
@@ -159,11 +167,11 @@ class FormHandler {
       endpoint = this.mailchimpEndpoint;
       payload = {
         email: email.trim(),
+        consent,
         turnstileToken,
       };
     } else {
-      console.log('Vercel');
-
+      // console.log('Vercel');
       const formName = form.dataset.name;
       if (!formName) {
         console.warn('[ss.forms] Missing data-name on form');
